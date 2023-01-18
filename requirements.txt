@@ -1,6 +1,5 @@
-multiprocessing
+multiprocess
 colorama
 shutil
 pywin32
-zipfile
 xlwings
