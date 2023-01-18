@@ -3,10 +3,10 @@ name: ReleasePkg Build
 on:
   push:
     branches:
-      - main1
+      - main
   pull_request:
     branches:
-      - main1
+      - main
 
 jobs:
   build:
