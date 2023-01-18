@@ -45,6 +45,7 @@ jobs:
         pyinstaller `
         --onefile ReleasePkg.py `
         --python-option u `
+      shell: cmd
 
     - name: Archive release
       run: 7z a -tzip ${{ env.RELEASE_FILENAME }} ReleasePkg.exe
