@@ -42,9 +42,7 @@ jobs:
         pip install pyinstaller
     - name: Build with PyInstaller for windows
       run: |
-        pyinstaller `
-        --onefile ReleasePkg.py `
-        --python-option u `
+        pyinstaller --onefile ReleasePkg.py
       shell: cmd
 
     - name: Archive release
