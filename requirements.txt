@@ -1,0 +1,6 @@
+multiprocessing
+colorama
+shutil
+pywin32
+zipfile
+xlwings
