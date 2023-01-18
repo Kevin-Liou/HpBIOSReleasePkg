@@ -41,10 +41,10 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     - name: Build with PyInstaller for windows
-       run: |
-         pyinstaller `
-         --onefile ReleasePkg.py `
-         --python-option u `
+      run: |
+        pyinstaller `
+        --onefile ReleasePkg.py `
+        --python-option u `
 
     - name: Archive release
       run: 7z a -tzip ${{ env.RELEASE_FILENAME }} ReleasePkg.exe
