@@ -1,10 +1,10 @@
 #=================================
 # coding=UTF-8
-# Make Release Pkg Script Library.   1.8.10
+# Make Release Pkg Script Library.   1.8.11
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 
-#This script is using "Make Release Pkg Script"   4.7.18
+#This script is using "Make Release Pkg Script"   4.7.19
 #=================================
 
 from multiprocessing import Pool, Manager, freeze_support
@@ -15,7 +15,6 @@ from ftplib import FTP, error_perm
 from datetime import datetime
 from zipfile import ZipFile
 from re import sub, search
-from binascii import crc32
 from time import sleep, localtime, strftime
 from xlwings import constants
 
@@ -953,93 +952,84 @@ def PrintBiosBuildDate(Matchfolderlist, BiosBuildDate):
         print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
 
 
-def CheckFileCRC32(Matchfolderlist, NewVersion, OldVersion):
+def CheckFileChecksum(Matchfolderlist, NewVersion, OldVersion):
     try:
-        BiosFileCRC32 = {}
+        BiosFileChecksum = {}
         for NProc in Matchfolderlist:
-            path = ".\\"+NProc
+            path = ".\\" + NProc
             if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
                (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
                (Platform_Flag(NProc) == "Intel G10"):
-                #======If Intel G5&G6 DM 400
+                #======If Intel DM 400 16MB Binary
                 if (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin")) or \
                    (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_12.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin")):
-                    blocksize = 1024 * 64
-                    f = open(path+"\\"+NProc.split("_")[1] + "_" + NewVersion + "_16.bin", "rb")
-                    str = f.read(blocksize)
-                    crc = 0
-                    while len(str) != 0:
-                        crc = crc32(str,crc)
-                        str = f.read(blocksize)
-                    f.close()
-                    BiosFileCRC32[NProc.split("_")[1]] = crc
-                #======If Intel G5&G6 DM 800/600
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+                #======If Intel DM 800/600 32MB binary
                 if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin"):
-                    blocksize = 1024 * 64
-                    f = open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", "rb")
-                    str = f.read(blocksize)
-                    crc = 0
-                    while len(str) != 0:
-                        crc = crc32(str,crc)
-                        str = f.read(blocksize)
-                    f.close()
-                    BiosFileCRC32[NProc.split("_")[1]] = crc
-            #======If G5 AMD
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+            #======If AMD
             else:
                 if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin") or \
                    os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin"):
                     for root,dirs,files in os.walk(path):
                         for name in files:
                             if name.find("_16.bin") != -1:
-                                blocksize = 1024 * 64
-                                f = open(path+"\\"+name, "rb")
-                                str = f.read(blocksize)
-                                crc = 0
-                                while len(str) != 0:
-                                    crc = crc32(str,crc)
-                                    str = f.read(blocksize)
-                                f.close()
-                                BiosFileCRC32[NProc.split("_")[1]] = crc
+                                with open(path + "\\" + name, 'rb') as f:
+                                    content = f.read()
+                                    binary_sum = sum(bytearray(content))
+                                    binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                                    f.close()
+                                BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
                 if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin"):
-                   blocksize = 1024 * 64
-                   f = open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", "rb")
-                   str = f.read(blocksize)
-                   crc = 0
-                   while len(str) != 0:
-                       crc = crc32(str,crc)
-                       str = f.read(blocksize)
-                   f.close()
-                   BiosFileCRC32[NProc.split("_")[1]] = crc
-        return(BiosFileCRC32)
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+        return(BiosFileChecksum)
     except:
-        print("File CRC32 Failed!")
+        print("File Checksum Get Failed!")
         return 0
 
 
-def PrintBiosBinaryCRC32(NewProcPkgInfo, BiosBinaryCRC32, NewVersion):
+def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
     for NProc in NewProcPkgInfo:
         path = ".\\" + ("_").join(NProc)
+        logging.debug(str(BiosBinaryChecksum))
+        #======If Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
            (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
            (Platform_Flag(NProc) == "Intel G10"):
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_12.bin"):
-                print(NProc[2] + "_" + NProc[3] + "_16.bin " + "crc32 = {:#010X}".format(BiosBinaryCRC32[NProc[2]]))
+                print(NProc[2] + "_" + NProc[3] + "_16.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_32.bin"):
-                print(NProc[2] + "_" + NProc[3] + "_32.bin " + "crc32 = {:#010X}".format(BiosBinaryCRC32[NProc[2]]))
+                print(NProc[2] + "_" + NProc[3] + "_32.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
+        #======If AMD
         else:
             if (Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "Q26") or (Platform_Flag(NProc) == "Q27") or (Platform_Flag(NProc) == "S25"):
-                print(NProc[0] + "_" + NewVersion + ".bin " + " crc32 = {:#010X}".format(BiosBinaryCRC32[NProc[0]]))
+                print(NProc[0] + "_" + NewVersion + ".bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[0]].upper()))
             if Platform_Flag(NProc) == "R24" :
-                print(NProc[1] + "_" + NewVersion + ".bin " + " crc32 = {:#010X}".format(BiosBinaryCRC32[NProc[1]]))
+                print(NProc[1] + "_" + NewVersion + ".bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[1]].upper()))
             if (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or (Platform_Flag(NProc) == "T25") or \
                (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27"):
-                print(NProc[0] + "_" + NewVersion + "_32.bin " + " crc32 = {:#010X}".format(BiosBinaryCRC32[NProc[0]]))
+                print(NProc[0] + "_" + NewVersion + "_32.bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[0]].upper()))
 
 
 def CheckMEVersion(NProc, Matchfolderlist):
-    Version = "11.0.11.1111"
+    Version = "11.0.11.1111" # Default version
     logging.debug('CheckMEVersion Start.')
     for Fv in Matchfolderlist:
         if not os.path.isdir(".\\" + Fv):
@@ -1099,7 +1089,7 @@ def SetReleaseNoteVersionValue(Version):
     IntelHowToFlashV1075 = {'BIOS Flash: From -> To':    'A18'}
 
 
-def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryCRC32, NewVersion, NewBuildID, Matchfolderlist):
+def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist):
     print("Platform ReleaseNote Modify...")
     app = xw.App(visible = False,add_book = False)
     app.display_alerts = False
@@ -1148,7 +1138,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryCRC32, Ne
                                         IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelHistory.range('B'+str(a+3)).value = NewBuildID
-                                    IntelHistory.range('B'+str(a+4)).value = "0x" + hex(BiosBinaryCRC32[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
+                                    IntelHistory.range('B'+str(a+4)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
                                 elif IntelHistory.range('A'+str(a+3)).value == 'CHECKSUM':
                                     logging.debug('IntelHistory(a+3) = CHECKSUM')
                                     if (NewBuildID == "" or NewBuildID == "0000"):
@@ -1157,7 +1147,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryCRC32, Ne
                                     else:
                                         IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                    IntelHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryCRC32[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
+                                    IntelHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
                                 else:
                                     check = "fail"
                                     break
@@ -1294,7 +1284,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryCRC32, Ne
                         else:
                             AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                         AMDHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]]
-                        AMDHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryCRC32[ReleaseFileName.split("_")[2]]).upper()[2:10]
+                        AMDHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]
                         logging.debug('Version fill finish.')
                         check = "pass"
                         break
