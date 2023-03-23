@@ -1,10 +1,10 @@
 #=================================
 # coding=UTF-8
-# Make Release Pkg Script Library.   1.8.11
+# Make Release Pkg Script Library.   1.8.12
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 
-#This script is using "Make Release Pkg Script"   4.7.19
+#This script is using "Make Release Pkg Script"   4.7.20
 #=================================
 
 from multiprocessing import Pool, Manager, freeze_support
@@ -174,8 +174,8 @@ def ChangeBuildID(NewProcPkgInfo, Versionfilelist, NewVersion):
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[1]
     if (Platform_Flag(NewProcPkgInfo) == "Intel G4") or (Platform_Flag(NewProcPkgInfo) == "Intel G5") or \
-       (Platform_Flag(NewProcPkgInfo) == "Intel G6") or (Platform_Flag(NewProcPkgInfo) == "Intel G8") or \
-       (Platform_Flag(NewProcPkgInfo) == "Intel G9") or (Platform_Flag(NewProcPkgInfo) == "Intel G10"):
+        (Platform_Flag(NewProcPkgInfo) == "Intel G6") or (Platform_Flag(NewProcPkgInfo) == "Intel G8") or \
+        (Platform_Flag(NewProcPkgInfo) == "Intel G9") or (Platform_Flag(NewProcPkgInfo) == "Intel G10"):
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[2]
     if (Platform_Flag(NewProcPkgInfo) == "Intel G3"):
@@ -250,11 +250,11 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Matchfolderlist):
     #======For G5 and late Fv
     # Check Capsule folder format for G5 and late.
     if (Platform_Flag(targetFolder) == "Intel G5") or (Platform_Flag(targetFolder) == "Intel G6") or\
-       (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or\
-       (Platform_Flag(targetFolder) == "Intel G10"):
+        (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or\
+        (Platform_Flag(targetFolder) == "Intel G10"):
         if os.path.isdir(targetfullpath + "\\Capsule\\CCG5") and ((Platform_Flag(targetFolder) == "Intel G6") or \
-           (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or \
-           (Platform_Flag(targetFolder) == "Intel G10")):
+            (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or \
+            (Platform_Flag(targetFolder) == "Intel G10")):
             os.rename(targetfullpath + "\\Capsule\\CCG5", targetfullpath + "\\Capsule\\PD_FW")
         if not os.path.isdir(targetfullpath + "\\Capsule\\Windows"):
             os.makedirs(targetfullpath + "\\Capsule\\Windows")
@@ -433,9 +433,9 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
     # Bin file copy to FPTW&Global.
     for name in os.listdir(sourcefullpath):# Bin file copy to FPTW&Global
         if (Platform_Flag(name) == "Q26") or (Platform_Flag(name) == "Q27") or \
-		   (Platform_Flag(name) == "R26") or (Platform_Flag(name) == "R24") or \
-           (Platform_Flag(name) == "S25") or (Platform_Flag(name) == "S27") or (Platform_Flag(name) == "S29") or \
-		   (Platform_Flag(name) == "T25") or (Platform_Flag(name) == "T26") or (Platform_Flag(name) == "T27"): # 78 AMD 78 R26 78787878787878
+            (Platform_Flag(name) == "R26") or (Platform_Flag(name) == "R24") or \
+            (Platform_Flag(name) == "S25") or (Platform_Flag(name) == "S27") or (Platform_Flag(name) == "S29") or \
+            (Platform_Flag(name) == "T25") or (Platform_Flag(name) == "T26") or (Platform_Flag(name) == "T27"): # 78 AMD 78 R26 78787878787878
             if name.find(NewVersion + "_16.bin") != -1:
                 copy(sourcefullpath + name, targetfullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
@@ -731,8 +731,8 @@ def CheckPkg(NewProcPkgInfo, NewVersion):
                     print(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)\\"+Boardversion+".bin"+" can't find.");
             else:print(Path+" can't find.")
 
-    if Check=="True":   print("New release Pkg made "+Fore.GREEN+"successfully.\n")
-    else:   print("New release Pkg made "+Fore.RED+"failed.")
+    if Check=="True":   print("New release Pkg made " + Fore.GREEN + "successfully.\n")
+    else:   print("New release Pkg made " + Fore.RED + "failed.")
 
 
 def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
@@ -784,7 +784,7 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
                     print(Path+"\\Capsule\\Windows\\"+Boardversion+".inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
             else:print(Path+" can't find.")
     if (Platform_Flag(NewProcPkgInfo) == "S27") or (Platform_Flag(NewProcPkgInfo) == "S29") or (Platform_Flag(NewProcPkgInfo) == "T25") or \
-       (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"):# G5 and G6 AMD R26 AMD S25
+        (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"):# G5 and G6 AMD R26 AMD S25
         for NProc in NewProcPkgInfo:
             Boardversion=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
@@ -873,15 +873,15 @@ def SetToolVersionTable(tablepath, name, fileinfo_temp):
 def CompareInfo(NProc, name, ver, path, Toolversiontablepath):
     PkgPath = ".\\" + ("_").join(NProc) + "\\"
     FilesPath = {"MEInfoWin64.exe":          PkgPath + "METools\\MEInfo\\WINDOWS64\\",
-                 "MEManufWin64.exe":         PkgPath + "METools\\MEManuf\\WINDOWS64\\",
-                 "FPTW.exe":                 PkgPath + "FPTW\\",
-                 "FWUpdLcl64.exe":           PkgPath + "FactoryUtility\\", # Zip
-                 "EEUPDATEW64e.exe":         PkgPath + "FPTW\\",
-                 "BiosConfigUtility64.exe":  PkgPath + "FPTW\\",
-                 "HpFirmwareUpdRec64.exe":   PkgPath + "HPFWUPDREC\\",
-                 "Buff2.efi":                PkgPath + "FPTW\\",# Skip
-                 "ElectronicLabelUpdate.efi":PkgPath + "FactoryUtility\\", # Zip # Skip
-                 "wmiTool64.exe":            PkgPath + "FactoryUtility\\"} # Zip # Skip
+                "MEManufWin64.exe":         PkgPath + "METools\\MEManuf\\WINDOWS64\\",
+                "FPTW.exe":                 PkgPath + "FPTW\\",
+                "FWUpdLcl64.exe":           PkgPath + "FactoryUtility\\", # Zip
+                "EEUPDATEW64e.exe":         PkgPath + "FPTW\\",
+                "BiosConfigUtility64.exe":  PkgPath + "FPTW\\",
+                "HpFirmwareUpdRec64.exe":   PkgPath + "HPFWUPDREC\\",
+                "Buff2.efi":                PkgPath + "FPTW\\",# Skip
+                "ElectronicLabelUpdate.efi":PkgPath + "FactoryUtility\\", # Zip # Skip
+                "wmiTool64.exe":            PkgPath + "FactoryUtility\\"} # Zip # Skip
     if name in FilesPath:
         if name == "FWUpdLcl64.exe" or name == "ElectronicLabelUpdate.efi" or name == "wmiTool64.exe": #Files in zip
             if name == "FWUpdLcl64.exe":
@@ -895,7 +895,7 @@ def CompareInfo(NProc, name, ver, path, Toolversiontablepath):
             else:
                 pass
         elif name == "MEInfoWin64.exe" or name == "MEManufWin64.exe" or name == "FPTW.exe" or name == "EEUPDATEW64e.exe" or\
-             name == "BiosConfigUtility64.exe" or name == "HpFirmwareUpdRec64.exe":
+            name == "BiosConfigUtility64.exe" or name == "HpFirmwareUpdRec64.exe":
             if os.path.isfile(FilesPath[name] + name):
                 fileinfo_temp = GetFileInfo(FilesPath[name] + name)
                 if not fileinfo_temp[0] == ver:
@@ -942,7 +942,7 @@ def CheckBiosBuildDate(Matchfolderlist):
                         else:
                             File.close()
         if time == "":
-            print("Check Build Date fail.")
+            print(Fore.RED + "Check Build Date fail.")
         BiosBuildDate[Fv.split("_")[1]] = time
     return(BiosBuildDate)
 
@@ -952,18 +952,18 @@ def PrintBiosBuildDate(Matchfolderlist, BiosBuildDate):
         print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
 
 
-def CheckFileChecksum(Matchfolderlist, NewVersion, OldVersion):
+def CheckFileChecksum(Matchfolderlist, NewVersion):
     try:
         BiosFileChecksum = {}
         for NProc in Matchfolderlist:
             path = ".\\" + NProc
             if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-               (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-               (Platform_Flag(NProc) == "Intel G10"):
+                (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+                (Platform_Flag(NProc) == "Intel G10"):
                 #======If Intel DM 400 16MB Binary
                 if (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin")) or \
-                   (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_12.bin") and \
+                    (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_12.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin")):
                     with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin", 'rb') as f:
                         content = f.read()
@@ -982,7 +982,7 @@ def CheckFileChecksum(Matchfolderlist, NewVersion, OldVersion):
             #======If AMD
             else:
                 if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin") or \
-                   os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin"):
+                    os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin"):
                     for root,dirs,files in os.walk(path):
                         for name in files:
                             if name.find("_16.bin") != -1:
@@ -999,9 +999,10 @@ def CheckFileChecksum(Matchfolderlist, NewVersion, OldVersion):
                         binary_sum = hex(binary_sum & 0xFFFFFFFF)
                         f.close()
                     BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+        logging.debug('BiosFileChecksum = ' + str(BiosFileChecksum))
         return(BiosFileChecksum)
     except:
-        print("File Checksum Get Failed!")
+        print(Fore.RED + "File Checksum Get Failed!")
         return 0
 
 
@@ -1011,8 +1012,8 @@ def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
         logging.debug(str(BiosBinaryChecksum))
         #======If Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-           (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-           (Platform_Flag(NProc) == "Intel G10"):
+            (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+            (Platform_Flag(NProc) == "Intel G10"):
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_12.bin"):
                 print(NProc[2] + "_" + NProc[3] + "_16.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_32.bin"):
@@ -1024,7 +1025,7 @@ def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
             if Platform_Flag(NProc) == "R24" :
                 print(NProc[1] + "_" + NewVersion + ".bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[1]].upper()))
             if (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or (Platform_Flag(NProc) == "T25") or \
-               (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27"):
+                (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27"):
                 print(NProc[0] + "_" + NewVersion + "_32.bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[0]].upper()))
 
 
@@ -1102,8 +1103,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
         try:
             #======If Intel DM G5 and late
             if (Platform_Flag(ReleaseFileName) == "Intel G5") or (Platform_Flag(ReleaseFileName) == "Intel G6") or \
-               (Platform_Flag(ReleaseFileName) == "Intel G8") or (Platform_Flag(ReleaseFileName) == "Intel G9") or \
-               (Platform_Flag(ReleaseFileName) == "Intel G10"):
+                (Platform_Flag(ReleaseFileName) == "Intel G8") or (Platform_Flag(ReleaseFileName) == "Intel G9") or \
+                (Platform_Flag(ReleaseFileName) == "Intel G10"):
                 logging.debug('If Intel DM G5 and late')
                 MEVersion = CheckMEVersion(NProc, Matchfolderlist) # ex. 14.0.21.7227
                 IntelHistory = wb.sheets['IntelPlatformHistory']
@@ -1138,7 +1139,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                         IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelHistory.range('B'+str(a+3)).value = NewBuildID
-                                    IntelHistory.range('B'+str(a+4)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
+                                    logging.debug('IntelHistory(a+4) = BIOS Checksum')
+                                    IntelHistory.range('B'+str(a+4)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
                                 elif IntelHistory.range('A'+str(a+3)).value == 'CHECKSUM':
                                     logging.debug('IntelHistory(a+3) = CHECKSUM')
                                     if (NewBuildID == "" or NewBuildID == "0000"):
@@ -1147,12 +1149,13 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                     else:
                                         IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                    IntelHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]#CHECK SUM
+                                    logging.debug('IntelHistory(a+4) = BIOS Checksum')
+                                    IntelHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
                                 else:
                                     check = "fail"
                                     break
-                                IntelProjectPN.range('C'+str(b+1)).value = "P00000-000"#PART NUMBER
-                                IntelHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]]#BUILD DATE
+                                IntelProjectPN.range('C'+str(b+1)).value = "P00000-000" #PART NUMBER
+                                IntelHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]] #BUILD DATE
                                 logging.debug('Version fill finish.')
                                 check = "pass"
                                 break
@@ -1180,11 +1183,11 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                             logging.debug('IntelHistory.range(B+str(a)).value = ' + IntelHistory.range('B'+str(a)).value)
                             for b in range(3, 30):
                                 if IntelProjectPN.range('B'+str(b)).value == 'VERSION' and \
-                                   IntelProjectPN.range('B'+str(b+1)).value == 'PART NUMBER' and \
-                                   IntelProjectPN.range('B'+str(b+5)).value == 'VERSION':
+                                    IntelProjectPN.range('B'+str(b+1)).value == 'PART NUMBER' and \
+                                    IntelProjectPN.range('B'+str(b+5)).value == 'VERSION':
                                     IntelProjectPN.range('C'+str(b+5)).value = MEVersion
                                     if str(MEVersion).strip() != str(OldMEVersion).strip():
-                                        IntelProjectPN.range('C'+str(b+6)).value = "P00000-000"#PART NUMBER
+                                        IntelProjectPN.range('C'+str(b+6)).value = "P00000-000" #PART NUMBER
                                         print("Set ME FW Part Number to P00000-000.")
                                     logging.debug('ME fill finish.')
                                     check = "pass"
@@ -1198,8 +1201,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 check = ""
                 for a in range(20, 40):
                     if IntelInfo.range('A'+str(a)).value == 'Folder Path' and \
-                       IntelInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
-                       IntelInfo.range('A'+str(a+2)).value == 'Folder Path':
+                        IntelInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
+                        IntelInfo.range('A'+str(a+2)).value == 'Folder Path':
                         Folder_Path_HP = IntelInfo.range('B'+str(a)).value
                         Folder_Path_Quanta = IntelInfo.range('B'+str(a+2)).value
                         pattern = r'\w+_\w+_\w\d\d_\w+.7z'
@@ -1261,8 +1264,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 logging.debug('HowToFlash Pic position modify finish. \nModifyReleaseNote finish.')
             #======If AMD G5 DM
             elif (Platform_Flag(ReleaseFileName) == "R26") or (Platform_Flag(ReleaseFileName) == "R24") or (Platform_Flag(ReleaseFileName) == "S25") or \
-                 (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
-                 (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
+                    (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
+                    (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
                 AMDHistory = wb.sheets['AMDPlatformHistory']
                 AMDInfo = wb.sheets['AMDPlatformInfo']
                 AMDHowToFlash = wb.sheets['AMDPlatformHowToFlash']
@@ -1276,15 +1279,15 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 check = ""
                 for a in range(9, 30):
                     if AMDHistory.range('A'+str(a)).value == 'System BIOS Version' and \
-                       AMDHistory.range('A'+str(a+1)).value == 'Target EE phase (DB/SI/PV)' and \
-                       AMDHistory.range('A'+str(a+2)).value == 'Build Date' and \
-                       AMDHistory.range('A'+str(a+3)).value == 'CHECKSUM':
+                        AMDHistory.range('A'+str(a+1)).value == 'Target EE phase (DB/SI/PV)' and \
+                        AMDHistory.range('A'+str(a+2)).value == 'Build Date' and \
+                        AMDHistory.range('A'+str(a+3)).value == 'CHECKSUM':
                         if (NewBuildID == "" or NewBuildID == "0000"):
                             AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
                         else:
                             AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                         AMDHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]]
-                        AMDHistory.range('B'+str(a+3)).value = "0x" + hex(BiosBinaryChecksum[ReleaseFileName.split("_")[2]]).upper()[2:10]
+                        AMDHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper()
                         logging.debug('Version fill finish.')
                         check = "pass"
                         break
@@ -1294,8 +1297,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 check = ""
                 for a in range(20, 40):
                     if AMDInfo.range('A'+str(a)).value == 'Folder Path' and \
-                       AMDInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
-                       AMDInfo.range('A'+str(a+2)).value == 'Folder Path':
+                        AMDInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
+                        AMDInfo.range('A'+str(a+2)).value == 'Folder Path':
                         Folder_Path_HP = AMDInfo.range('B'+str(a)).value
                         Folder_Path_Quanta = AMDInfo.range('B'+str(a+2)).value
                         if Platform_Flag(ReleaseFileName) == "R24":
@@ -1345,11 +1348,11 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
             wb.save()
             wb.close()
             app.quit()
-            print("Platform ReleaseNote Modify succeeded.\n")
+            print("Platform ReleaseNote Modify " + Fore.GREEN + "succeeded.\n")
         except:
             wb.close()
             app.quit()
-            print("ReleaseNote Modify Failed!\n")
+            print("ReleaseNote Modify " + Fore.RED + "Failed!\n")
             return 0
     else:
         Old_ReleaseNoteVersion = wb.sheets['Revision'].range('A8').value

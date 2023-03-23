@@ -15,7 +15,7 @@ BoardID=["P10","Q10~11","Q21~23","Q26~27","R11","R21~24","R26","S10~11","S21~23"
 ProjectName={"Q26":"ScottyRr", "Q27":"Scotty", "R24":"Worf", "R26":"Riker", "S25":"DoppioPco", "S27":"DoppioRn", "S29":"CubanoRn", "T25":"DoppioCzn", "T26":"CubanoCzn", "T27":"DoppioR8"}
 
 Versionfilelist=["BUFF2.nsh", "Buff2All.nsh", "Update32.bat", "Update64.bat", "UpdateEFI.nsh",
-                 "Update32_vPro.bat", "Update64_vPro.bat", "UpdateEFI_vPro.nsh"]
+                "Update32_vPro.bat", "Update64_vPro.bat", "UpdateEFI_vPro.nsh"]
 
 NotRemovefilerule=["Note", "note", "History", "How to Flash", "AMT_CFG", "logo", "sign.bin", "HPSignME", "Batch"] # Priority over "Removefilerule"
 
@@ -41,7 +41,7 @@ TestReleaseServer={         "type":"Test",
 if __name__ == '__main__':
     init(autoreset=True)# colorama
     freeze_support()# For windows do multiprocessing.
-    Version = "4.7.19"
+    Version = "4.7.20"
 
     args = argparse_function(Version)
 
@@ -74,9 +74,9 @@ if __name__ == '__main__':
         temp = []
         #======For Intel
         if (Platform_Flag(Project) == "Intel G3") or (Platform_Flag(Project) == "Intel G4") or \
-           (Platform_Flag(Project) == "Intel G5") or (Platform_Flag(Project) == "Intel G6") or \
-           (Platform_Flag(Project) == "Intel G8") or (Platform_Flag(Project) == "Intel G9") or \
-           (Platform_Flag(Project) == "Intel G10"):
+            (Platform_Flag(Project) == "Intel G5") or (Platform_Flag(Project) == "Intel G6") or \
+            (Platform_Flag(Project) == "Intel G8") or (Platform_Flag(Project) == "Intel G9") or \
+            (Platform_Flag(Project) == "Intel G10"):
             for Dir in os.listdir(".\\"):# Find oldveriosn pkg.
                 if not Dir.split("_")[0] == "Fv" and not Dir.find(".7z") != -1 and not Dir.find(".zip") !=- 1:
                     if Project + "_" + OldVersion in Dir:
@@ -103,9 +103,9 @@ if __name__ == '__main__':
         else:
             OldVersion_AMD = OldVersion[0:2] + "." + OldVersion[2:4] + "." + OldVersion[4:6] # ex.['Q26', '02.07.03']
             if (Platform_Flag(Project) == "R26") or (Platform_Flag(Project) == "S25") or \
-               (Platform_Flag(Project) == "S27") or (Platform_Flag(Project) == "S29") or \
-               (Platform_Flag(Project) == "T25") or (Platform_Flag(Project) == "T26") or \
-               (Platform_Flag(Project) == "T27") :# 78 AMD 78 R26 S25~S29 T25~T27
+                (Platform_Flag(Project) == "S27") or (Platform_Flag(Project) == "S29") or \
+                (Platform_Flag(Project) == "T25") or (Platform_Flag(Project) == "T26") or \
+                (Platform_Flag(Project) == "T27") :# 78 AMD 78 R26 S25~S29 T25~T27
                 OldVersion_AMD = OldVersion
             for Dir in os.listdir(".\\"):# Find oldveriosn pkg.
                 if not Dir.split("_")[0] == "Fv" and not Dir.find(".7z") != -1 and not Dir.find(".zip") != -1:
@@ -139,9 +139,9 @@ if __name__ == '__main__':
     for OldProcPkg in OldProcPkgInfo:
         #======For Intel
         if (Platform_Flag(OldProcPkg) == "Intel G3") or (Platform_Flag(OldProcPkg) == "Intel G4") or \
-           (Platform_Flag(OldProcPkg) == "Intel G5") or (Platform_Flag(OldProcPkg) == "Intel G6") or \
-           (Platform_Flag(OldProcPkg) == "Intel G8") or (Platform_Flag(OldProcPkg) == "Intel G9") or \
-           (Platform_Flag(OldProcPkg) == "Intel G10"):
+            (Platform_Flag(OldProcPkg) == "Intel G5") or (Platform_Flag(OldProcPkg) == "Intel G6") or \
+            (Platform_Flag(OldProcPkg) == "Intel G8") or (Platform_Flag(OldProcPkg) == "Intel G9") or \
+            (Platform_Flag(OldProcPkg) == "Intel G10"):
             for Proc in range(len(NewProcPkgInfo)):
                 NewProcPkgInfo[Proc] = NewProcPkgInfo[Proc][:3] # ex:['Harp', 'MV', 'Q21']
                 NewProcPkgInfo[Proc].append(NewVersion) # ex:['Harp', 'MV', 'Q21', 'NewVersion']
@@ -155,9 +155,9 @@ if __name__ == '__main__':
             NewVersion_AMD = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] # ex.['Q26', '02.07.03']
             for Proc in range(len(NeedProcOldPkg)):
                 if (Platform_Flag(OldProcPkg) == "R26") or (Platform_Flag(OldProcPkg) == "S25") or \
-                   (Platform_Flag(OldProcPkg) == "S27") or (Platform_Flag(OldProcPkg) == "S29") or \
-                   (Platform_Flag(OldProcPkg) == "T25") or (Platform_Flag(OldProcPkg) == "T26") or \
-                   (Platform_Flag(OldProcPkg) == "T27") :# 78 AMD 78 R26 S25~S29 T25~T27
+                    (Platform_Flag(OldProcPkg) == "S27") or (Platform_Flag(OldProcPkg) == "S29") or \
+                    (Platform_Flag(OldProcPkg) == "T25") or (Platform_Flag(OldProcPkg) == "T26") or \
+                    (Platform_Flag(OldProcPkg) == "T27") :# 78 AMD 78 R26 S25~S29 T25~T27
                     NewVersion_AMD = NewVersion # ex.'020703'
                     if len(NewProcPkgInfo[Proc]) == 3:
                         del NewProcPkgInfo[Proc][2]
@@ -182,9 +182,9 @@ if __name__ == '__main__':
     for PkgInfo in range(len(NewProcPkgInfo)):
         #======For AMD Start
         if (Platform_Flag(OldProcPkgInfo) == "Q26") or (Platform_Flag(OldProcPkgInfo) == "Q27") or (Platform_Flag(OldProcPkgInfo) == "R26") or \
-           (Platform_Flag(OldProcPkgInfo) == "S25") or (Platform_Flag(OldProcPkgInfo) == "S27") or \
-           (Platform_Flag(OldProcPkgInfo) == "S29") or (Platform_Flag(OldProcPkgInfo) == "T25") or \
-           (Platform_Flag(OldProcPkgInfo) == "T26") or (Platform_Flag(OldProcPkgInfo) == "T27") :# ex.['Q26', '01.04.01']=>['ScottyRr', 'ScottyRr', 'Q26', '010401']
+            (Platform_Flag(OldProcPkgInfo) == "S25") or (Platform_Flag(OldProcPkgInfo) == "S27") or \
+            (Platform_Flag(OldProcPkgInfo) == "S29") or (Platform_Flag(OldProcPkgInfo) == "T25") or \
+            (Platform_Flag(OldProcPkgInfo) == "T26") or (Platform_Flag(OldProcPkgInfo) == "T27") :# ex.['Q26', '01.04.01']=>['ScottyRr', 'ScottyRr', 'Q26', '010401']
             NewProcPkgInfo[PkgInfo][1] = NewVersion
             NewProcPkgInfo[PkgInfo].insert(0, ProjectName[NewProcPkgInfo[PkgInfo][0]])
             NewProcPkgInfo[PkgInfo].insert(0, ProjectName[NewProcPkgInfo[PkgInfo][1]])
@@ -261,17 +261,17 @@ if __name__ == '__main__':
     for PkgInfo in range(len(NewProcPkgInfo)):
         #======For AMD Start
         if (Platform_Flag(OldProcPkgInfo) == "Q26") or (Platform_Flag(OldProcPkgInfo) == "Q27") or (Platform_Flag(OldProcPkgInfo) == "R26") or \
-           (Platform_Flag(OldProcPkgInfo) == "S25") or (Platform_Flag(OldProcPkgInfo) == "S27") or \
-           (Platform_Flag(OldProcPkgInfo) == "S29") or (Platform_Flag(OldProcPkgInfo) == "T25") or \
-           (Platform_Flag(OldProcPkgInfo) == "T26") or (Platform_Flag(OldProcPkgInfo) == "T27") : # ['ScottyRr', 'ScottyRr', 'Q26', '010401']=>['Q26', '01.04.01']
+            (Platform_Flag(OldProcPkgInfo) == "S25") or (Platform_Flag(OldProcPkgInfo) == "S27") or \
+            (Platform_Flag(OldProcPkgInfo) == "S29") or (Platform_Flag(OldProcPkgInfo) == "T25") or \
+            (Platform_Flag(OldProcPkgInfo) == "T26") or (Platform_Flag(OldProcPkgInfo) == "T27") : # ['ScottyRr', 'ScottyRr', 'Q26', '010401']=>['Q26', '01.04.01']
             NewProcPkgInfo[PkgInfo].remove(ProjectName[NewProcPkgInfo[PkgInfo][2]])
             NewProcPkgInfo[PkgInfo].remove(ProjectName[NewProcPkgInfo[PkgInfo][1]])
             if (Platform_Flag(OldProcPkgInfo) == "Q26") or (Platform_Flag(OldProcPkgInfo) == "Q27"):
                 NewProcPkgInfo[PkgInfo][1] = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
         if (Platform_Flag(OldProcPkgInfo) == "R24"): # ['Worf', 'Worf', 'R24, '010401']=>['Worf', 'R24', '01.04.01']
-           NewProcPkgInfo[PkgInfo].remove(NewProcPkgInfo[PkgInfo][0]) # remove 'Worf'
-           NewProcPkgInfo[PkgInfo][1] = Platform_Flag(OldProcPkgInfo)
-           NewProcPkgInfo[PkgInfo][2] = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
+            NewProcPkgInfo[PkgInfo].remove(NewProcPkgInfo[PkgInfo][0]) # remove 'Worf'
+            NewProcPkgInfo[PkgInfo][1] = Platform_Flag(OldProcPkgInfo)
+            NewProcPkgInfo[PkgInfo][2] = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
         #======For AMD End
 
     for OProc in range(len(OldProcPkgInfo)):# How much Old Version folder
@@ -296,13 +296,13 @@ if __name__ == '__main__':
     #=================Modify Pkg Update Version==============================================
     print("Modify Pkg Update Version".center(90, "="))
     BiosBuildDate = CheckBiosBuildDate(Matchfolderlist)
-    BiosBinaryChecksum = CheckFileChecksum(Matchfolderlist, NewVersion, OldVersion)
+    BiosBinaryChecksum = CheckFileChecksum(Matchfolderlist, NewVersion)
     for NProc in NewProcPkgInfo:# Pkg Modify Update Version
         #======For Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
-           (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
-           (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-           (Platform_Flag(NProc) == "Intel G10"):
+            (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
+            (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+            (Platform_Flag(NProc) == "Intel G10"):
             Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
                 ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("elease" in ReleaseNote) and (".docx" in ReleaseNote)]
@@ -395,9 +395,9 @@ if __name__ == '__main__':
         for NProc in NewProcPkgInfo:
             #======For Intel
             if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
-               (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
-               (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-               (Platform_Flag(NProc) == "Intel G10"):
+                (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
+                (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+                (Platform_Flag(NProc) == "Intel G10"):
                 if Fv.split("_")[1] == NProc[2]:
                     if os.path.isdir(".\\"+Fv):
                         Path = ".\\" + Fv
@@ -414,7 +414,7 @@ if __name__ == '__main__':
                             os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Boardversion + ".xml")
                             print(Boardversion + "_16.bin & " + Boardversion + ".xml rename succeeded.")
                         if (os.path.isfile(Path+"\\"+Boardversion+"_32.bin") or os.path.isfile(Path+"\\"+Boardversion+"_16.bin")) \
-                           and os.path.isdir(".\\"+("_").join(NProc)):# Check Pkg Folder Exist
+                            and os.path.isdir(".\\"+("_").join(NProc)):# Check Pkg Folder Exist
                             Copy_Release_Files(Fv, ("_").join(NProc), NProc, Matchfolderlist)
                         else:
                             print("Pkg " + ("_").join(NProc) + " can't find.")
@@ -423,21 +423,21 @@ if __name__ == '__main__':
             #======For AMD
             else:
                 if (Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "R24") or (Platform_Flag(NProc) == "Q26") or (Platform_Flag(NProc) == "Q27") or \
-                   (Platform_Flag(NProc) == "S25") or (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or \
-                   (Platform_Flag(NProc) == "T25") or (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27") :
+                    (Platform_Flag(NProc) == "S25") or (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or \
+                    (Platform_Flag(NProc) == "T25") or (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27") :
                     if (Fv.split("_")[1] == NProc[0]) or (Fv.split("_")[1] == NProc[1]):
                         if os.path.isdir(".\\" + Fv):
-                         Path = os.getcwd() + "\\" + Fv
-                         Boardversion = NProc[0] + "_" + NewVersion
-                         if (Platform_Flag(NProc) == "R24"):
+                            Path = os.getcwd() + "\\" + Fv
+                            Boardversion = NProc[0] + "_" + NewVersion
+                        if (Platform_Flag(NProc) == "R24"):
                             Boardversion = NProc[1] + "_" + NewVersion
-                         if os.path.isfile(Path + "\\" + Boardversion + ".bin") or os.path.isfile(Path + "\\" + Boardversion + "_16.bin") or os.path.isfile(Path + "\\" + Boardversion + "_32.bin"):# For 16MB BIOS
+                        if os.path.isfile(Path + "\\" + Boardversion + ".bin") or os.path.isfile(Path + "\\" + Boardversion + "_16.bin") or os.path.isfile(Path + "\\" + Boardversion + "_32.bin"):# For 16MB BIOS
                             if os.path.isfile(Path + "\\" + Boardversion[:3] + ".xml"):
-                               if os.path.isdir(".\\" + ("_").join(NProc)):# Check Pkg Folder Exist
-                                  Copy_Release_Files_AMD(Fv, ("_").join(NProc), NewVersion)
-                               else:
+                                if os.path.isdir(".\\" + ("_").join(NProc)):# Check Pkg Folder Exist
+                                    Copy_Release_Files_AMD(Fv, ("_").join(NProc), NewVersion)
+                                else:
                                     print("Pkg " + ("_").join(NProc) + " can't find.")
-                         print(Boardversion + "_16.bin & " + Boardversion + ".xml rename succeeded.")
+                        print(Boardversion + "_16.bin & " + Boardversion + ".xml rename succeeded.")
     if len(Matchfolderlist) == 0 or len(ProcessProjectList) == 0:
         print("Can't find anything Fv folder.\n")
 
@@ -468,9 +468,9 @@ if __name__ == '__main__':
     print("End".center(90, "="))
     #======For Intel Check
     if (Platform_Flag(OldProcPkgInfo) == "Intel G3") or (Platform_Flag(OldProcPkgInfo) == "Intel G4") or \
-       (Platform_Flag(OldProcPkgInfo) == "Intel G5") or (Platform_Flag(OldProcPkgInfo) == "Intel G6") or \
-       (Platform_Flag(OldProcPkgInfo) == "Intel G8") or (Platform_Flag(OldProcPkgInfo) == "Intel G9") or \
-       (Platform_Flag(OldProcPkgInfo) == "Intel G10"):
+        (Platform_Flag(OldProcPkgInfo) == "Intel G5") or (Platform_Flag(OldProcPkgInfo) == "Intel G6") or \
+        (Platform_Flag(OldProcPkgInfo) == "Intel G8") or (Platform_Flag(OldProcPkgInfo) == "Intel G9") or \
+        (Platform_Flag(OldProcPkgInfo) == "Intel G10"):
         CheckPkg(NewProcPkgInfo, NewVersion)# Check new release Pkg is OK?
         PrintBiosBuildDate(Matchfolderlist, BiosBuildDate)
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
