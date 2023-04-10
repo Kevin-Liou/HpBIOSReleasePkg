@@ -951,6 +951,8 @@ def CheckBiosBuildDate(Matchfolderlist):
 def GetMrcVersion(Matchfolderlist):
     for Fv in Matchfolderlist:
         MrcVersion = ""
+        if (Platform_Flag(Fv) == "Intel G5"): #Block Intel G5 for MRC Version error.
+            return (MrcVersion)
         if (Platform_Flag(Fv) == "Intel G6"):
             MRC_Offset = 4
         else:
@@ -1177,7 +1179,11 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                     logging.debug('IntelHistory(a+4) = BIOS Checksum')
                                     IntelHistory.range('B'+str(a+4)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
                                     logging.debug('IntelHistory(a+6) = MRC')
-                                    IntelHistory.range('B'+str(a+6)).value = "" + str(BiosMrcVersion)  # MRC VERSION
+                                    if BiosMrcVersion !="":
+                                        IntelHistory.range('B'+str(a+6)).value = "" + str(BiosMrcVersion)  # MRC VERSION
+                                        if(IntelHistory.range('B'+str(a+6)).value != IntelHistory.range('C'+str(a+6)).value):
+                                            logging.debug('MRC Version change')
+                                            IntelHistory.range('B'+str(a+6)).api.Font.Color = 0x00B050
                                 elif IntelHistory.range('A'+str(a+3)).value == 'CHECKSUM':
                                     logging.debug('IntelHistory(a+3) = CHECKSUM')
                                     if (NewBuildID == "" or NewBuildID == "0000"):
@@ -1188,8 +1194,12 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                     logging.debug('IntelHistory(a+4) = BIOS Checksum')
                                     IntelHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
-                                    logging.debug('IntelHistory(a+5) = MRC')
-                                    IntelHistory.range('B'+str(a+5)).value = "" + str(BiosMrcVersion)  # MRC VERSION
+                                    if BiosMrcVersion !="":
+                                        logging.debug('IntelHistory(a+5) = MRC')
+                                        IntelHistory.range('B'+str(a+5)).value = "" + str(BiosMrcVersion)  # MRC VERSION
+                                        if(IntelHistory.range('B'+str(a+5)).value != IntelHistory.range('C'+str(a+5)).value):
+                                            logging.debug('MRC Version change')
+                                            IntelHistory.range('B'+str(a+5)).api.Font.Color = 0x00B050
                                 else:
                                     check = "fail"
                                     break
