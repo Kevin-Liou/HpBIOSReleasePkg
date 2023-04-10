@@ -20,6 +20,7 @@ from xlwings import constants
 
 import sys, os, glob, logging, argparse
 import xlwings as xw
+import struct
 
 
 def argparse_function(ver):
@@ -947,6 +948,40 @@ def CheckBiosBuildDate(Matchfolderlist):
     return(BiosBuildDate)
 
 
+def GetMrcVersion(Matchfolderlist):
+    for Fv in Matchfolderlist:
+        MrcVersion = ""
+        if (Platform_Flag(Fv) == "Intel G6"):
+            MRC_Offset = 4
+        else:
+            MRC_Offset = 0
+        Path = ".\\" + Fv
+        if os.path.isdir(Path):
+            for root, dirs, files in os.walk(Path):
+                for name in files:
+                    if name.find("_32.bin") != -1:
+                        logging.debug("find BIOS binary: " + name)
+                        MRCVer_Str = b'MRCVER_'
+                        with open(root + "\\" + name, "rb") as BinaryFile:
+                            BinaryData = BinaryFile.read()
+                            MRCVer_Str_index = BinaryData.find(MRCVer_Str)
+                        if MRCVer_Str_index == -1:
+                            print(Fore.RED + 'Can not find MRC Version')
+                        else:
+                            MRCVer_End_index = MRCVer_Str_index + \
+                                len(MRCVer_Str) + MRC_Offset + 4
+                            VersionData = BinaryData[MRCVer_Str_index +
+                                                     len(MRCVer_Str) + MRC_Offset:MRCVer_End_index]
+                            byte_sequence = struct.unpack('>4B', VersionData)
+                            MrcVersion = '.'.join(map(str, byte_sequence))
+                        break
+                    else:
+                        logging.debug('Can not find BIOS binary')
+        if MrcVersion == "":
+            logging.debug("Get MRC Version fail.")
+    return (MrcVersion)
+
+
 def PrintBiosBuildDate(Matchfolderlist, BiosBuildDate):
     for Fv in Matchfolderlist:
         print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
@@ -1090,7 +1125,7 @@ def SetReleaseNoteVersionValue(Version):
     IntelHowToFlashV1075 = {'BIOS Flash: From -> To':    'A18'}
 
 
-def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist):
+def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, Matchfolderlist):
     print("Platform ReleaseNote Modify...")
     app = xw.App(visible = False,add_book = False)
     app.display_alerts = False
@@ -1141,6 +1176,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                         IntelHistory.range('B'+str(a+3)).value = NewBuildID
                                     logging.debug('IntelHistory(a+4) = BIOS Checksum')
                                     IntelHistory.range('B'+str(a+4)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
+                                    logging.debug('IntelHistory(a+6) = MRC')
+                                    IntelHistory.range('B'+str(a+6)).value = "" + str(BiosMrcVersion)  # MRC VERSION
                                 elif IntelHistory.range('A'+str(a+3)).value == 'CHECKSUM':
                                     logging.debug('IntelHistory(a+3) = CHECKSUM')
                                     if (NewBuildID == "" or NewBuildID == "0000"):
@@ -1151,6 +1188,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                                         IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                                     logging.debug('IntelHistory(a+4) = BIOS Checksum')
                                     IntelHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
+                                    logging.debug('IntelHistory(a+5) = MRC')
+                                    IntelHistory.range('B'+str(a+5)).value = "" + str(BiosMrcVersion)  # MRC VERSION
                                 else:
                                     check = "fail"
                                     break
