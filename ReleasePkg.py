@@ -41,7 +41,7 @@ TestReleaseServer={         "type":"Test",
 if __name__ == '__main__':
     init(autoreset=True)# colorama
     freeze_support()# For windows do multiprocessing.
-    Version = "4.7.20"
+    Version = "4.7.21"
 
     args = argparse_function(Version)
 

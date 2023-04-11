@@ -1,10 +1,10 @@
 #=================================
 # coding=UTF-8
-# Make Release Pkg Script Library.   1.8.12
+# Make Release Pkg Script Library.   1.8.13
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 
-#This script is using "Make Release Pkg Script"   4.7.20
+#This script is using "Make Release Pkg Script"   4.7.21
 #=================================
 
 from multiprocessing import Pool, Manager, freeze_support
