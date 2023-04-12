@@ -458,6 +458,18 @@ if __name__ == '__main__':
                     ver = ChangeVersionInfo(verinfo)
                     #date = ChangeDataInfo(dateinfo)
                     CompareInfo(NProc, name, ver, path, Toolversiontablepath)
+            #======For ADM G5 and late
+            elif ((Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "S25") or \
+                (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or \
+                (Platform_Flag(NProc) == "T25") or (Platform_Flag(NProc) == "T26") or\
+                (Platform_Flag(NProc) == "T27") ) and \
+                os.path.isdir(".\\" + ("_").join(NProc) + "\\Capsule\\Windows"):
+                Toolversiontablepath = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
+                Toolversioninfo = ReadToolVersionTable(Toolversiontablepath)
+                Check = "Match"
+                for name, type, verinfo, path, note in Toolversioninfo:
+                    ver = ChangeVersionInfo(verinfo)
+                    CompareInfo(NProc, name, ver, path, Toolversiontablepath)
     except ValueError:
         pass
         #print("\n"+"Table Format "+Fore.RED+"Error"+".\n")
