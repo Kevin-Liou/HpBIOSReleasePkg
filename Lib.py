@@ -843,6 +843,18 @@ def ReadToolVersionTable(tablepath):
         ToolList = wb.sheets["ENT18 BIOS&ME tool list"]
         UsRange = str(ToolList.used_range).split('$') # get file date range, ex:A,1,E,12
         for i in range(3, int(UsRange[4][:2])+1): # Lines ex:3 to 13
+            ##['<Range [ToolVersion.xlsx]ENT18 BIOS&ME tool list', 'A', '1:', 'E', '12>']
+            ###### I suggeset [:2] changing to [:-1] 
+            temp=[]
+            for j in range(1, ord(UsRange[3])-64+1): # Columns ex:1 to 6
+                temp.append(ToolList.range((i, j)).value)
+            toolinfo.append(temp)
+    elif wb.sheets[0].name == "ENT19 BIOS": #AMD   don't have ME
+        ToolList = wb.sheets["ENT19 BIOS"]
+        UsRange = str(ToolList.used_range).split('$') # get file date range, ex:A,1,E,7
+        #print(UsRange)                                # ['<Range [ToolVersion.xlsx]ENT19 BIOS!', 'A', '1:', 'E', '7>']
+        #onlyNum = sub("[0-9]+","",UsRange[4][:-1]) # 7
+        for i in range(2, int(UsRange[4][:-1])+1): # Lines ex:2 to 7
             temp=[]
             for j in range(1, ord(UsRange[3])-64+1): # Columns ex:1 to 6
                 temp.append(ToolList.range((i, j)).value)
@@ -864,6 +876,14 @@ def SetToolVersionTable(tablepath, name, fileinfo_temp):
         ToolList = wb.sheets["ENT18 BIOS&ME tool list"]
         UsRange = str(ToolList.used_range).split('$') # get file date range, ex:A,1,E,12
         for i in range(3,int(UsRange[4][:2])+1): # Lines ex:3 to 13
+            # I suggeset [:2] changing to [:-1] too 
+            if ToolList.range(i,1).value == name:
+                ToolList.range(i,3).value = str(fileinfo_temp)
+    # AMD
+    elif wb.sheets[0].name == "ENT19 BIOS":
+        ToolList = wb.sheets["ENT19 BIOS"]
+        UsRange = str(ToolList.used_range).split('$') # get file date range, ex:A,1,E,7
+        for i in range(2,int(UsRange[4][:-1])+1): # Lines ex:2 to 7
             if ToolList.range(i,1).value == name:
                 ToolList.range(i,3).value = str(fileinfo_temp)
     wb.save()
@@ -879,7 +899,9 @@ def CompareInfo(NProc, name, ver, path, Toolversiontablepath):
                 "FWUpdLcl64.exe":           PkgPath + "FactoryUtility\\", # Zip
                 "EEUPDATEW64e.exe":         PkgPath + "FPTW\\",
                 "BiosConfigUtility64.exe":  PkgPath + "FPTW\\",
+                "BiosConfigUtility.exe":    PkgPath + "AMDFLASH\\NeverLock\\",  # AMD
                 "HpFirmwareUpdRec64.exe":   PkgPath + "HPFWUPDREC\\",
+                "HpFirmwareUpdRec.exe":     PkgPath + "HPFWUPDREC\\",           # AMD
                 "Buff2.efi":                PkgPath + "FPTW\\",# Skip
                 "ElectronicLabelUpdate.efi":PkgPath + "FactoryUtility\\", # Zip # Skip
                 "wmiTool64.exe":            PkgPath + "FactoryUtility\\"} # Zip # Skip
@@ -896,7 +918,8 @@ def CompareInfo(NProc, name, ver, path, Toolversiontablepath):
             else:
                 pass
         elif name == "MEInfoWin64.exe" or name == "MEManufWin64.exe" or name == "FPTW.exe" or name == "EEUPDATEW64e.exe" or\
-            name == "BiosConfigUtility64.exe" or name == "HpFirmwareUpdRec64.exe":
+            name == "BiosConfigUtility64.exe" or name == "HpFirmwareUpdRec64.exe" or name == "BiosConfigUtility.exe" or\
+            name == "HpFirmwareUpdRec.exe" : # add AMD
             if os.path.isfile(FilesPath[name] + name):
                 fileinfo_temp = GetFileInfo(FilesPath[name] + name)
                 if not fileinfo_temp[0] == ver:
