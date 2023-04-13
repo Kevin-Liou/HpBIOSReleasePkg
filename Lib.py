@@ -20,6 +20,7 @@ from xlwings import constants
 
 import sys, os, glob, logging, argparse
 import xlwings as xw
+import struct
 
 
 def argparse_function(ver):
@@ -947,6 +948,186 @@ def CheckBiosBuildDate(Matchfolderlist):
     return(BiosBuildDate)
 
 
+def ModifyExcelData(Sheet, Modify_Data , Version):
+    if not any(c.isdigit() or c.isnumeric() for c in Version):
+        return 
+    Sheetrange = 'A1:A100'
+    if Modify_Data == 'VERSION':
+       logging.debug('VERSION')
+       count = 0
+       for char in Version:
+            if char.isdigit():
+                count += 1
+            if count == 9:
+                Sheetrange = 'B8:B12'
+                logging.debug('ME Version:' + str(Version))
+            elif count == 6:
+                Sheetrange = 'B3:B7'
+                logging.debug('BIOS Version:' + str(Version))
+
+    if Modify_Data == 'ID':
+        if Version == 'BIOS 000000':
+           Sheetrange = 'B4'
+           Version = '000000'
+        elif Version == 'ME 000000':
+           Sheetrange = 'B9'
+           Version = '000000'
+    
+    if Modify_Data == 'PART NUMBER':
+        if Version == 'BIOS P00000-000':
+           Sheetrange = 'B3:B7'
+           Version = 'P00000-000'
+        elif Version == 'ME P00000-000':
+           Sheetrange = 'B8:B12'
+           Version = 'P00000-000'
+    for row in Sheet.range(Sheetrange):
+        for cell in row:
+            if cell.value and Modify_Data in cell.value:
+                logging.debug(cell.address + ' = '+ Modify_Data)
+                oldversion = str(cell.offset(0, 1).value)
+                cell.offset(0, 1).value = "" + str(Version)
+                if oldversion != cell.offset(0, 1).value:
+                    cell.offset(0, 1).api.Font.Color = 0x00B050
+
+
+def FindOldMEVersion(Sheet):
+    for row in Sheet.range('B8:B12'):
+        for cell in row:
+            if cell.value and 'VERSION' in cell.value:
+                logging.debug('Old ME Version = '+ cell.offset(0, 1).value)
+                return(cell.offset(0, 1).value)
+
+
+def GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, Unpackformat):
+    for Fv in Matchfolderlist:
+        BinaryData = ""
+        Path = ".\\" + Fv
+        if os.path.isdir(Path):
+            for root, dirs, files in os.walk(Path):
+                for name in files:
+                    if name.find("_32.bin") != -1:
+                        logging.debug("find BIOS binary: " + name)
+                        with open(root + "\\" + name, "rb") as BinaryFile:
+                            FileData = BinaryFile.read()
+                            Data_Str_index = FileData.find(FindData)
+                        if Data_Str_index == -1:
+                            logging.debug(Fore.RED + 'Can not find Data in Binary')
+                        else:
+                            Data_End_index = Data_Str_index + len(FindData) + Offset + DataSize
+                            VersionData = FileData[Data_Str_index + len(FindData) + Offset:Data_End_index]
+                            byte_sequence = struct.unpack(Unpackformat, VersionData)
+                            BinaryData = '.'.join(map(str, byte_sequence))
+                        BinaryFile.close()
+        if BinaryData == "":
+            logging.debug("Get Binary Data failed.")
+    return (BinaryData)
+
+def GetMrcVersion(Matchfolderlist):
+    Version = ""
+    for Fv in Matchfolderlist:
+        if (Platform_Flag(Fv) == "Intel G5"): #Block Intel G5 for MRC Version error.
+            return (Version)
+        if (Platform_Flag(Fv) == "Intel G6"): #Intel G6 offset different with other generations.
+            Offset = 4
+        else:
+            Offset = 0
+    FindData = b'MRCVER_'
+    UnpackDataSize = '>4B'
+    DataSize = 0x04
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get MRC Version fail.")
+    return (Version)
+
+
+def GetMEVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0x94
+    FindData = b'RBEP.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get ISH Version fail.")
+    return (Version)
+
+
+def GetIshVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0x94
+    for Fv in Matchfolderlist:
+       if (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 ISH offset.
+            Offset = 0x64
+    FindData = b'ISHC.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get ISH Version fail.")
+    return (Version)
+
+
+def GetPmcVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0x94
+    for Fv in Matchfolderlist:
+       if (Platform_Flag(Fv) == "Intel G6"): #Modify Intel G6 PMC offset.
+            Offset = 0x64
+       elif (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 PMC offset.
+            Offset = 0xF4
+    FindData = b'PMCP.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get PMC Version fail.")
+    return (Version)
+
+
+def GetNphyVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0xC4
+    FindData = b'NPHY.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get NPHY Version fail.")
+    return (Version)
+
+
+def GetSphyVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0x184
+    FindData = b'SPHY.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get SPHY Version fail.")
+    return (Version)
+
+
+def GetPchcVersion(Matchfolderlist):
+    Version = ""
+    Offset = 0x94
+    FindData = b'PCHC.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Matchfolderlist, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get PCHC Version fail.")
+    return (Version)
+
 def PrintBiosBuildDate(Matchfolderlist, BiosBuildDate):
     for Fv in Matchfolderlist:
         print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
@@ -1090,7 +1271,7 @@ def SetReleaseNoteVersionValue(Version):
     IntelHowToFlashV1075 = {'BIOS Flash: From -> To':    'A18'}
 
 
-def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist):
+def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Matchfolderlist):
     print("Platform ReleaseNote Modify...")
     app = xw.App(visible = False,add_book = False)
     app.display_alerts = False
@@ -1121,46 +1302,27 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 #======Modify 'System BIOS Version' 'Build Date' 'CHECKSUM'
                 logging.debug('Modify ,System BIOS ,Version ,Build Date ,CHECKSUM')
                 check = ""
-                for a in range(9, 30):
-                    if IntelHistory.range('A'+str(a)).value == 'System BIOS Version' and \
-                    IntelHistory.range('A'+str(a+1)).value == 'Target EE phase (DB/SI/PV)' and \
-                    IntelHistory.range('A'+str(a+2)).value == 'Build Date':
-                        for b in range(3, 30):
-                            if IntelProjectPN.range('B'+str(b)).value == 'VERSION' and \
-                            IntelProjectPN.range('B'+str(b+1)).value == 'PART NUMBER' and \
-                            IntelProjectPN.range('B'+str(b+5)).value == 'VERSION':
-                                if IntelHistory.range('A'+str(a+3)).value == 'BIOS Build Version':
-                                    logging.debug('IntelHistory(a+3) = BIOS Build Version')
-                                    if (NewBuildID == "" or NewBuildID == "0000"):
-                                        IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
-                                        IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
-                                        IntelHistory.range('B'+str(a+3)).value = "0000"
-                                    else:
-                                        IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                        IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                        IntelHistory.range('B'+str(a+3)).value = NewBuildID
-                                    logging.debug('IntelHistory(a+4) = BIOS Checksum')
-                                    IntelHistory.range('B'+str(a+4)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
-                                elif IntelHistory.range('A'+str(a+3)).value == 'CHECKSUM':
-                                    logging.debug('IntelHistory(a+3) = CHECKSUM')
-                                    if (NewBuildID == "" or NewBuildID == "0000"):
-                                        IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
-                                        IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
-                                    else:
-                                        IntelHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                        IntelProjectPN.range('C'+str(b)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
-                                    logging.debug('IntelHistory(a+4) = BIOS Checksum')
-                                    IntelHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper() #CHECK SUM
-                                else:
-                                    check = "fail"
-                                    break
-                                IntelProjectPN.range('C'+str(b+1)).value = "P00000-000" #PART NUMBER
-                                IntelHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]] #BUILD DATE
-                                logging.debug('Version fill finish.')
-                                check = "pass"
-                                break
-                        if check == "pass":
-                            break
+                if (NewBuildID == "" or NewBuildID == "0000"):
+                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) #BIOS Version
+                    logging.debug("VERSION")
+                    ModifyExcelData(IntelProjectPN,'VERSION',str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) #BIOS Version
+                    ModifyExcelData(IntelHistory,'BIOS Build Version',"0000") #BIOS Version
+                else:
+                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
+                    ModifyExcelData(IntelProjectPN,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
+                    ModifyExcelData(IntelHistory,'BIOS Build Version',NewBuildID) #NewBuildID
+                ModifyExcelData(IntelHistory,'Build Date',BiosBuildDate[ReleaseFileName.split("_")[2]]) #BUILD DATE
+                ModifyExcelData(IntelHistory,'CHECKSUM',"0x" + BiosBinaryChecksum[NProc[2]].upper()) #CHECK SUM
+                ModifyExcelData(IntelHistory,'MRC',BiosMrcVersion) #MRC
+                if(Platform_Flag(ReleaseFileName) == "Intel G9") or (Platform_Flag(ReleaseFileName) == "Intel G10"):
+                    ModifyExcelData(IntelHistory,'ISH FW version',"HpSigned_ishC_ " + BiosIshVersion) #ISH
+                else:
+                    ModifyExcelData(IntelHistory,'ISH FW version',"" + BiosIshVersion) #ISH
+                ModifyExcelData(IntelHistory,'PMC',BiosPmcVersion) #PMC
+                ModifyExcelData(IntelHistory,'NPHY',BiosNphyVersion) #NPHY
+                ModifyExcelData(IntelProjectPN,'PART NUMBER',"BIOS P00000-000") #BIOS PART NUMBER
+                ModifyExcelData(IntelProjectPN,'ID',"BIOS 000000") #BIOS PART NUMBER ID
+                check = "pass"
                 if not check == "pass":
                     print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
                 #======ME Version
@@ -1168,33 +1330,14 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 if not MEVersion == "11.0.11.1111":
                     pattern = r'[0-9]+[\.][0-9]+[\.][0-9]+[\.]\d{4}'
                     check = ""
-                    for a in range(25, 50):
-                        if IntelHistory.range('A'+str(a)).value == 'ME Firmware':
-                            OldMEVersionStr = IntelHistory.range('B'+str(a)).value
-                            logging.debug("OldMEVersionStr = " + OldMEVersionStr)
-                            NewMEVersionStr = sub(pattern, MEVersion, OldMEVersionStr)
-                            logging.debug("NewMEVersionStr = " + NewMEVersionStr)
-                            searchObj = search(pattern, OldMEVersionStr)
-                            if searchObj != None:
-                                OldMEVersion = searchObj.group(0)
-                            else:
-                                break
-                            IntelHistory.range('B'+str(a)).value = NewMEVersionStr
-                            logging.debug('IntelHistory.range(B+str(a)).value = ' + IntelHistory.range('B'+str(a)).value)
-                            for b in range(3, 30):
-                                if IntelProjectPN.range('B'+str(b)).value == 'VERSION' and \
-                                    IntelProjectPN.range('B'+str(b+1)).value == 'PART NUMBER' and \
-                                    IntelProjectPN.range('B'+str(b+5)).value == 'VERSION':
-                                    IntelProjectPN.range('C'+str(b+5)).value = MEVersion
-                                    if str(MEVersion).strip() != str(OldMEVersion).strip():
-                                        IntelProjectPN.range('C'+str(b+6)).value = "P00000-000" #PART NUMBER
-                                        print("Set ME FW Part Number to P00000-000.")
-                                    logging.debug('ME fill finish.')
-                                    check = "pass"
-                                    break
-                            logging.debug('ME fill finish2.')
-                        if check == "pass":
-                            break
+                    OldMEVersion = FindOldMEVersion(IntelProjectPN)
+                    logging.debug('ME Version : ' + MEVersion)
+                    logging.debug('Old ME Version : ' + OldMEVersion)
+                    ModifyExcelData(IntelProjectPN, 'VERSION', MEVersion)
+                    if MEVersion != OldMEVersion:
+                        ModifyExcelData(IntelProjectPN,'PART NUMBER',"ME P00000-000") #ME PART NUMBER
+                        ModifyExcelData(IntelProjectPN,'ID',"ME 000000") #ME PART NUMBER ID
+                    check = "pass"
                 if not check == "pass":
                     print("Can't find ['ME Firmware']")
                 #======Modify 'Folder Path'

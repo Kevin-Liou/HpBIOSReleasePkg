@@ -296,6 +296,10 @@ if __name__ == '__main__':
     #=================Modify Pkg Update Version==============================================
     print("Modify Pkg Update Version".center(90, "="))
     BiosBuildDate = CheckBiosBuildDate(Matchfolderlist)
+    BiosMrcVersion = GetMrcVersion(Matchfolderlist)
+    BiosIshVersion = GetIshVersion(Matchfolderlist)
+    BiosPmcVersion = GetPmcVersion(Matchfolderlist)
+    BiosNphyVersion = GetNphyVersion(Matchfolderlist)
     BiosBinaryChecksum = CheckFileChecksum(Matchfolderlist, NewVersion)
     for NProc in NewProcPkgInfo:# Pkg Modify Update Version
         #======For Intel
@@ -322,7 +326,7 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + ".xlsm")
                         if os.path.isfile(ReleaseName + NewVersion + ".xlsm"):
                             ReleaseNoteName = ReleaseName + NewVersion + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Matchfolderlist)
                             print("ReleaseNote Rename to " + ReleaseName + NewVersion + ".xlsm" + " succeeded.")
                     else:
                         if ReleaseNote_xlsm[0] == ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm":
@@ -331,7 +335,7 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm")
                         if os.path.isfile(ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"):
                             ReleaseNoteName = ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Matchfolderlist)
                             print("ReleaseNote Rename to " + ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
                     print("Can't find release note file.")
@@ -361,7 +365,7 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + ".xlsm"):
                             ReleaseNoteName = ReleaseName + "Note_" + NewVersion + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Matchfolderlist)
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + ".xlsm" + " succeeded.")
                     else:
                         if ReleaseNote_xlsm[0] == ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm":
@@ -370,7 +374,7 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm"):
                             ReleaseNoteName = ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Matchfolderlist)
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
                     print("Can't find Release_Notes.docx")
