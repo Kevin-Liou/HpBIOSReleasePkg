@@ -41,7 +41,7 @@ TestReleaseServer={         "type":"Test",
 if __name__ == '__main__':
     init(autoreset=True)# colorama
     freeze_support()# For windows do multiprocessing.
-    Version = "4.7.20"
+    Version = "4.7.21"
 
     args = argparse_function(Version)
 
@@ -460,6 +460,18 @@ if __name__ == '__main__':
                 for name, type, verinfo, path, note in Toolversioninfo:
                     ver = ChangeVersionInfo(verinfo)
                     #date = ChangeDataInfo(dateinfo)
+                    CompareInfo(NProc, name, ver, path, Toolversiontablepath)
+            #======For ADM G5 and late
+            elif ((Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "S25") or \
+                (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or \
+                (Platform_Flag(NProc) == "T25") or (Platform_Flag(NProc) == "T26") or\
+                (Platform_Flag(NProc) == "T27") ) and \
+                os.path.isdir(".\\" + ("_").join(NProc) + "\\Capsule\\Windows"):
+                Toolversiontablepath = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
+                Toolversioninfo = ReadToolVersionTable(Toolversiontablepath)
+                Check = "Match"
+                for name, type, verinfo, path, note in Toolversioninfo:
+                    ver = ChangeVersionInfo(verinfo)
                     CompareInfo(NProc, name, ver, path, Toolversiontablepath)
     except ValueError:
         pass
