@@ -16,6 +16,7 @@ from .Check import CheckPkg, CheckPkg_AMD
 from .Tool_Version_Compare import GetFileInfo, ReadToolVersionTable, SetToolVersionTable, CompareInfo, ChangeVersionInfo, ChangeDataInfo
 
 
-init(autoreset=True)# colorama
-freeze_support()# For windows do multiprocessing.
-args = argparse_function(Version())
+def main_init():
+    init(autoreset=True)# colorama
+    freeze_support()# For windows do multiprocessing.
+    args = argparse_function(Version())

@@ -42,6 +42,7 @@ TestReleaseServer={         "type":"Test",
 
     # Script Start
 if __name__ == '__main__':
+    main_init()
     #=================Script Start==========================================================
     logging.debug("Debug Mode")
     print(("Make Release Pkg Script  " + Version()).center(90, "="))
