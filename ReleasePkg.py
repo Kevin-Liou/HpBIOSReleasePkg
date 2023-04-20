@@ -4,22 +4,25 @@
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 
-#This script is for makeing release pkg
+#This script is for making release pkg
 #Now can use Intel G4, G5, G6, G8, G9, G10 AMD G4, G5, G6, G8 platform
 #=================================
+import sys, os, logging
+from colorama import Fore
+from shutil import move, rmtree
 
-from Lib import *
+from ReleasePkgLib import *
 
-# In add the Projects to be here, and the following BoradID should also add.
+# In add the Projects to be here, and the following Board ID should also add.
 BoardID=["P10","Q10~11","Q21~23","Q26~27","R11","R21~24","R26","S10~11","S21~23","S25~S29", "T11,T21~22", "T25~27", "U11,U21~23", "V11, V21~V23"]
 ProjectName={"Q26":"ScottyRr", "Q27":"Scotty", "R24":"Worf", "R26":"Riker", "S25":"DoppioPco", "S27":"DoppioRn", "S29":"CubanoRn", "T25":"DoppioCzn", "T26":"CubanoCzn", "T27":"DoppioR8"}
 
-Versionfilelist=["BUFF2.nsh", "Buff2All.nsh", "Update32.bat", "Update64.bat", "UpdateEFI.nsh",
+Version_file_list=["BUFF2.nsh", "Buff2All.nsh", "Update32.bat", "Update64.bat", "UpdateEFI.nsh",
                 "Update32_vPro.bat", "Update64_vPro.bat", "UpdateEFI_vPro.nsh"]
 
-NotRemovefilerule=["Note", "note", "History", "How to Flash", "AMT_CFG", "logo", "sign.bin", "HPSignME", "Batch"] # Priority over "Removefilerule"
+Not_Remove_file_rule=["Note", "note", "History", "How to Flash", "AMT_CFG", "logo", "sign.bin", "HPSignME", "Batch"] # Priority over "Remove_file_rule"
 
-Removefilerule=["DCI..+", ".cer", ".pfx", ".pvk", ".xlsm", ".log", r"Pvt.bin", r"metainfo.xml", r"Build.Log",
+Remove_file_rule=["DCI..+", ".cer", ".pfx", ".pvk", ".xlsm", ".log", r"Pvt.bin", r"metainfo.xml", r"Build.Log",
                 r"\d\d_\d\d_\d\d.bin", r"\d\d_\d\d_\d\d.cat", r"\d\d_\d\d_\d\d.inf",
                 r"\d{6}.bin", r"\d{6}.cat", r"\d{6}.cab", r"\d{6}.inf",
                 r"\d{4}_12.bin", r"\d{4}_16.bin", r"\d{4}_32.bin",
@@ -39,17 +42,11 @@ TestReleaseServer={         "type":"Test",
 
     # Script Start
 if __name__ == '__main__':
-    init(autoreset=True)# colorama
-    freeze_support()# For windows do multiprocessing.
-    Version = "4.7.21"
-
-    args = argparse_function(Version)
-
     #=================Script Start==========================================================
     logging.debug("Debug Mode")
-    print(("Make Release Pkg Script  " + Version).center(90, "="))
+    print(("Make Release Pkg Script  " + Version()).center(90, "="))
     print("Input Information".center(90, "="))
-    print("This script for makeing release pkg.\nNow can use Intel G4, G5, G6, G8, G9, G10&AMD G4, G5, G6, G8 platform.\n")
+    print("This script for making release pkg.\nNow can use Intel G4, G5, G6, G8, G9, G10&AMD G4, G5, G6, G8 platform.\n")
     OldVersion = InputStr("OldVersion:")# Input OldVersion & NewVersion & NewBuildID
     if OldVersion == "":
         print("\nPlease Input OldVersion.")
@@ -77,11 +74,11 @@ if __name__ == '__main__':
             (Platform_Flag(Project) == "Intel G5") or (Platform_Flag(Project) == "Intel G6") or \
             (Platform_Flag(Project) == "Intel G8") or (Platform_Flag(Project) == "Intel G9") or \
             (Platform_Flag(Project) == "Intel G10"):
-            for Dir in os.listdir(".\\"):# Find oldveriosn pkg.
+            for Dir in os.listdir(".\\"):# Find old version pkg.
                 if not Dir.split("_")[0] == "Fv" and not Dir.find(".7z") != -1 and not Dir.find(".zip") !=- 1:
                     if Project + "_" + OldVersion in Dir:
                         temp.append(Dir)
-            if len(temp) > 1 and OldBuildID == "0":# If find oldveriosn pkg have buildID.
+            if len(temp) > 1 and OldBuildID == "0":# If find old version pkg have buildID.
                 OldBuildID = InputStr("\n"+str(temp) + "\n" + Project + "_" + OldVersion + " Please Select Old BuildID:")
                 if OldBuildID == "" or OldBuildID == "0000":
                     temp = [a for a in temp if len(a.split("_")) == 4]
@@ -94,10 +91,10 @@ if __name__ == '__main__':
                         temp = [a for a in temp if len(a.split("_")) == 4]
                     else:
                         temp = [a for a in temp if Project + "_" + OldVersion + "_" + OldBuildID in a]
-            if len(temp) == 0:# Can't find oldveriosn pkg.
+            if len(temp) == 0:# Can't find old version pkg.
                 print(Project + "_" + OldVersion + " Old Pkg folder can't find, Please check.")
                 sys.exit()
-            else:# Add find oldveriosn pkg.
+            else:# Add find old version pkg.
                 NeedProcOldPkg.append(temp[0])
         #======For AMD
         else:
@@ -107,11 +104,11 @@ if __name__ == '__main__':
                 (Platform_Flag(Project) == "T25") or (Platform_Flag(Project) == "T26") or \
                 (Platform_Flag(Project) == "T27") :# 78 AMD 78 R26 S25~S29 T25~T27
                 OldVersion_AMD = OldVersion
-            for Dir in os.listdir(".\\"):# Find oldveriosn pkg.
+            for Dir in os.listdir(".\\"):# Find old version pkg.
                 if not Dir.split("_")[0] == "Fv" and not Dir.find(".7z") != -1 and not Dir.find(".zip") != -1:
                     if Project + "_" + OldVersion_AMD in Dir:
                         temp.append(Dir)
-            if len(temp) > 1 and OldBuildID == "0":# If find oldveriosn pkg have buildID.
+            if len(temp) > 1 and OldBuildID == "0":# If find old version pkg have buildID.
                 OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion_AMD + " Please Select Old BuildID:")
                 if OldBuildID == "" or OldBuildID == "0000":
                     temp = [a for a in temp if len(a.split("_")) == 2]
@@ -124,10 +121,10 @@ if __name__ == '__main__':
                         temp = [a for a in temp if len(a.split("_")) == 2]
                     else:
                         temp = [a for a in temp if Project + "_" + OldVersion_AMD + "_" + OldBuildID in a]
-            if len(temp) == 0:# Can't find oldveriosn pkg.
+            if len(temp) == 0:# Can't find old version pkg.
                 print(Project + "_" + OldVersion_AMD + " Old Pkg folder can't find, Please check.")
                 sys.exit()
-            else:# Add find oldveriosn pkg.
+            else:# Add find old version pkg.
                 NeedProcOldPkg.append(temp[0])
     print("\nYour need process old Pkg:\n" + str(NeedProcOldPkg))
 
@@ -176,8 +173,8 @@ if __name__ == '__main__':
 
     #=================Find Fv Folder Or Zip File=============================================
     print("Find Fv Folder Or Zip File".center(90, "="))
-    Matchfolderlist = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
-    Matchziplist = FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID)
+    Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
+    Match_zip_list = FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID)
 
     for PkgInfo in range(len(NewProcPkgInfo)):
         #======For AMD Start
@@ -193,67 +190,67 @@ if __name__ == '__main__':
             NewProcPkgInfo[PkgInfo].insert(0, NewProcPkgInfo[PkgInfo][0]) # add "Worf"
         #======For AMD End
 
-    print("Your Fv Folder: %s" % str(Matchfolderlist))
-    print("Your Fv Zip File: %s" % str(Matchziplist))
+    print("Your Fv Folder: %s" % str(Match_folder_list))
+    print("Your Fv Zip File: %s" % str(Match_zip_list))
     # If can't find Fv folder or Zip file.
-    if len(Matchfolderlist) == 0 and len(Matchziplist) == 0:
+    if len(Match_folder_list) == 0 and len(Match_zip_list) == 0:
         print("Can't find Fv folder and zip file.\nDownload Fv files from Production Release FTP.\n")
         temp = Ftp_multi(NewProcPkgInfo, ProductionReleaseServer, TestReleaseServer)[:]
         for name in temp:
             if str(name).find(".zip") != -1:
-                Matchziplist.append(name)
-    # Number of Fv folders not match Projectlist
-    elif len(Matchfolderlist) < len(ProcessProjectList) and len(Matchfolderlist) != 0 and len(Matchziplist) < len(ProcessProjectList):
+                Match_zip_list.append(name)
+    # Number of Fv folders not match Project list
+    elif len(Match_folder_list) < len(ProcessProjectList) and len(Match_folder_list) != 0 and len(Match_zip_list) < len(ProcessProjectList):
         print("Number of Fv folders not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
         temp = Ftp_multi(NewProcPkgInfo, ProductionReleaseServer, TestReleaseServer)[:]
         for name in temp:
             if str(name).find(".zip") != -1:
-                Matchziplist.append(name)
-    # Can't find Fv folders and Number of Fv Zip files not match Projectlist
-    elif len(Matchfolderlist) == 0 and len(Matchziplist)<len(ProcessProjectList):
+                Match_zip_list.append(name)
+    # Can't find Fv folders and Number of Fv Zip files not match Project list
+    elif len(Match_folder_list) == 0 and len(Match_zip_list)<len(ProcessProjectList):
         print("Fv Zip files not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
         temp = Ftp_multi(NewProcPkgInfo, ProductionReleaseServer, TestReleaseServer)[:]
         for name in temp:
             if str(name).find(".zip") != -1:
-                Matchziplist.append(name)
+                Match_zip_list.append(name)
     # If Fv folder already exists
-    elif len(Matchfolderlist) == len(ProcessProjectList):
+    elif len(Match_folder_list) == len(ProcessProjectList):
         print("Fv folder already exists.\n")
 
-    Matchfolderlist = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
+    Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
 
     # Find Fv Zip file Start extracting
-    if len(Matchziplist) != -1:
+    if len(Match_zip_list) != -1:
         print("\nFind Fv Zip File, Start Extracting.")
-        for i in range(len(Matchziplist)):
-            Foldername = Matchziplist[i].replace(".zip", "")
+        for i in range(len(Match_zip_list)):
+            Foldername = Match_zip_list[i].replace(".zip", "")
             #For git hub package file
-            if (str(Matchziplist[i]).find(str(ProjectNameInfo[i].lower())) != -1) and (str(Matchziplist[i]).find("Fv_") == -1) \
+            if (str(Match_zip_list[i]).find(str(ProjectNameInfo[i].lower())) != -1) and (str(Match_zip_list[i]).find("Fv_") == -1) \
                 and not os.path.isdir(".\\" + Foldername):
-                UnZip(Matchziplist[i])
+                UnZip(Match_zip_list[i])
                 os.rename(".\\" + Foldername + "\\Fv", ".\\" + Foldername + "\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32")
                 if not os.path.isdir(".\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32"):
                     move(".\\" + Foldername + "\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32", ".\\")
                 rmtree(Foldername)
-                #os.remove(".\\" + Matchziplist[i]) #remove zip file
-                print(Matchziplist[i] + " Extract succeeded.")
-                Matchfolderlist.append("Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32")
+                #os.remove(".\\" + Match_zip_list[i]) #remove zip file
+                print(Match_zip_list[i] + " Extract succeeded.")
+                Match_folder_list.append("Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32")
             #For normal package file
-            elif (str(Matchziplist[i]).find("Fv_") != -1) and not os.path.isdir(".\\" + Foldername):
-                UnZip(Matchziplist[i])
-                move(".\\" + Matchziplist[i], ".\\" + Foldername)
-                print(Matchziplist[i] + " Extract succeeded.")
-                Matchfolderlist.append(Foldername)
+            elif (str(Match_zip_list[i]).find("Fv_") != -1) and not os.path.isdir(".\\" + Foldername):
+                UnZip(Match_zip_list[i])
+                move(".\\" + Match_zip_list[i], ".\\" + Foldername)
+                print(Match_zip_list[i] + " Extract succeeded.")
+                Match_folder_list.append(Foldername)
             elif os.path.isdir(".\\" + Foldername):
                 print("Fv folder " + Foldername + " already exists, Remove Fv zip file.")
-                if os.path.isfile(".\\" + Matchziplist[i]):
-                    os.remove(".\\" + Matchziplist[i])
-        print("\nNow Your Fv Folder: %s" % str(str(Matchfolderlist)))
+                if os.path.isfile(".\\" + Match_zip_list[i]):
+                    os.remove(".\\" + Match_zip_list[i])
+        print("\nNow Your Fv Folder: %s" % str(str(Match_folder_list)))
     else:
-        print("\nNow Your Fv Folder: %s" % str(Matchfolderlist))
+        print("\nNow Your Fv Folder: %s" % str(Match_folder_list))
 
     #Working with multiple folders
-    MatchMultipleFolder(Matchfolderlist)
+    MatchMultipleFolder(Match_folder_list)
 
     #=================Find New Pkg Or Add New Pkg=============================================
     print("Find New Pkg Or Add New Pkg".center(90, "="))
@@ -290,14 +287,17 @@ if __name__ == '__main__':
         else:
             print("Pkg " + NewVersionPath.split("\\")[-1] + Fore.RED + " already exists.")
             sys.exit()
-    if len(Matchfolderlist) == 0:
+    if len(Match_folder_list) == 0:
         print("Can't find anything Fv folder.\n")
 
     #=================Modify Pkg Update Version==============================================
     print("Modify Pkg Update Version".center(90, "="))
-    BiosBuildDate = CheckBiosBuildDate(Matchfolderlist)
-    BiosMrcVersion = GetMrcVersion(Matchfolderlist)
-    BiosBinaryChecksum = CheckFileChecksum(Matchfolderlist, NewVersion)
+    BiosBuildDate = CheckBiosBuildDate(Match_folder_list)
+    BiosMrcVersion = GetMrcVersion(Match_folder_list)
+    BiosIshVersion = GetIshVersion(Match_folder_list)
+    BiosPmcVersion = GetPmcVersion(Match_folder_list)
+    BiosNphyVersion = GetNphyVersion(Match_folder_list)
+    BiosBinaryChecksum = CheckFileChecksum(Match_folder_list, NewVersion)
     for NProc in NewProcPkgInfo:# Pkg Modify Update Version
         #======For Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
@@ -306,7 +306,7 @@ if __name__ == '__main__':
             (Platform_Flag(NProc) == "Intel G10"):
             Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
-                ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("elease" in ReleaseNote) and (".docx" in ReleaseNote)]
+                ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and (".docx" in ReleaseNote)]
                 ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
                 if len(ReleaseNote_docx) == 1: # If get release note G4
                     os.chdir(Path)
@@ -318,26 +318,26 @@ if __name__ == '__main__':
                     ReleaseName = NProc[0] + "_" + NProc[1] + "_" + NProc[2] + "_BIOS_Release_Note_"
                     if (NewBuildID == "" or NewBuildID == "0000"):
                         if ReleaseNote_xlsm[0] == ReleaseName + NewVersion + ".xlsm":
-                            print("ReleaseNote Alreadly Rename.")
+                            print("ReleaseNote Already Rename.")
                             break
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + ".xlsm")
                         if os.path.isfile(ReleaseName + NewVersion + ".xlsm"):
                             ReleaseNoteName = ReleaseName + NewVersion + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
                             print("ReleaseNote Rename to " + ReleaseName + NewVersion + ".xlsm" + " succeeded.")
                     else:
                         if ReleaseNote_xlsm[0] == ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm":
-                            print("ReleaseNote Alreadly Rename.")
+                            print("ReleaseNote Already Rename.")
                             break
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm")
                         if os.path.isfile(ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"):
                             ReleaseNoteName = ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
                             print("ReleaseNote Rename to " + ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
                     print("Can't find release note file.")
                 os.chdir(Path + "\\FPTW")
-                ChangeBuildID(NProc, Versionfilelist, NewVersion)
+                ChangeBuildID(NProc, Version_file_list, NewVersion)
             else:
                 print("Pkg Folder " + ("_").join(NProc) + " can't find.\n")
             os.chdir("..\..")
@@ -362,7 +362,7 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + ".xlsm"):
                             ReleaseNoteName = ReleaseName + "Note_" + NewVersion + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + ".xlsm" + " succeeded.")
                     else:
                         if ReleaseNote_xlsm[0] == ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm":
@@ -371,12 +371,12 @@ if __name__ == '__main__':
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm"):
                             ReleaseNoteName = ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, Matchfolderlist)
+                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
                     print("Can't find Release_Notes.docx")
                 os.chdir(Path + "\\AMDFLASH")
-                ChangeBuildID(NProc, Versionfilelist, NewVersion)
+                ChangeBuildID(NProc, Version_file_list, NewVersion)
             else:
                 print("Pkg " + ("_").join(NProc) + " can't find.\n")
             os.chdir("..\..")
@@ -384,15 +384,15 @@ if __name__ == '__main__':
     #=================Remove Pkg Old File=====================================================
     print("Remove Pkg Old File".center(90, "="))
     for NProc in NewProcPkgInfo:
-        targetfolder = ("_").join(NProc)
-        if os.path.isdir(".\\"+targetfolder):
-            RemoveOldFileInDir(targetfolder, Removefilerule, NotRemovefilerule)
+        target_folder = ("_").join(NProc)
+        if os.path.isdir(".\\"+target_folder):
+            RemoveOldFileInDir(target_folder, Remove_file_rule, Not_Remove_file_rule)
         else:
             print("Pkg "+("_").join(NProc)+" can't find.\n")
 
     #=================Fv File Rename And Copy To Pkg===========================================
     print("Fv File Rename And Copy To Pkg".center(90, "="))
-    for Fv in Matchfolderlist:
+    for Fv in Match_folder_list:
         for NProc in NewProcPkgInfo:
             #======For Intel
             if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
@@ -402,21 +402,21 @@ if __name__ == '__main__':
                 if Fv.split("_")[1] == NProc[2]:
                     if os.path.isdir(".\\"+Fv):
                         Path = ".\\" + Fv
-                        Boardversion = NProc[2]+"_" + NProc[3]
-                        if os.path.isfile(Path + "\\" + Boardversion + "_12.bin") or os.path.isfile(Path + "\\" + Boardversion + "_16.bin"):# If Alreadly renamed
-                            if os.path.isfile(Path+"\\"+Boardversion+".xml"):
-                                print(Boardversion + "_12.bin or _16.bin & " + Boardversion + ".xml alreadly renamed.")
-                        if os.path.isfile(Path + "\\" + Boardversion + ".bin") and os.path.isfile(Path + "\\" + Boardversion + "_16.bin"):
-                            os.rename(Path + "\\" + Boardversion + ".bin", Path + "\\" + Boardversion + "_12.bin")  # Rename Fv folder 2 files
-                            os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Boardversion + ".xml")
-                            print(Boardversion + "_12.bin & " + Boardversion + ".xml rename succeeded.")
-                        if os.path.isfile(Path + "\\" + Boardversion + ".bin") and os.path.isfile(Path + "\\" + Boardversion + "_32.bin"):
-                            os.rename(Path + "\\" + Boardversion + ".bin", Path + "\\" + Boardversion + "_16.bin")  # Rename Fv folder 2 files
-                            os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Boardversion + ".xml")
-                            print(Boardversion + "_16.bin & " + Boardversion + ".xml rename succeeded.")
-                        if (os.path.isfile(Path+"\\"+Boardversion+"_32.bin") or os.path.isfile(Path+"\\"+Boardversion+"_16.bin")) \
+                        Board_version = NProc[2]+"_" + NProc[3]
+                        if os.path.isfile(Path + "\\" + Board_version + "_12.bin") or os.path.isfile(Path + "\\" + Board_version + "_16.bin"):# If Alreadly renamed
+                            if os.path.isfile(Path+"\\"+Board_version+".xml"):
+                                print(Board_version + "_12.bin or _16.bin & " + Board_version + ".xml alreadly renamed.")
+                        if os.path.isfile(Path + "\\" + Board_version + ".bin") and os.path.isfile(Path + "\\" + Board_version + "_16.bin"):
+                            os.rename(Path + "\\" + Board_version + ".bin", Path + "\\" + Board_version + "_12.bin")  # Rename Fv folder 2 files
+                            os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Board_version + ".xml")
+                            print(Board_version + "_12.bin & " + Board_version + ".xml rename succeeded.")
+                        if os.path.isfile(Path + "\\" + Board_version + ".bin") and os.path.isfile(Path + "\\" + Board_version + "_32.bin"):
+                            os.rename(Path + "\\" + Board_version + ".bin", Path + "\\" + Board_version + "_16.bin")  # Rename Fv folder 2 files
+                            os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Board_version + ".xml")
+                            print(Board_version + "_16.bin & " + Board_version + ".xml rename succeeded.")
+                        if (os.path.isfile(Path+"\\"+Board_version+"_32.bin") or os.path.isfile(Path+"\\"+Board_version+"_16.bin")) \
                             and os.path.isdir(".\\"+("_").join(NProc)):# Check Pkg Folder Exist
-                            Copy_Release_Files(Fv, ("_").join(NProc), NProc, Matchfolderlist)
+                            Copy_Release_Files(Fv, ("_").join(NProc), NProc, Match_folder_list)
                         else:
                             print("Pkg " + ("_").join(NProc) + " can't find.")
                     else:
@@ -429,17 +429,17 @@ if __name__ == '__main__':
                     if (Fv.split("_")[1] == NProc[0]) or (Fv.split("_")[1] == NProc[1]):
                         if os.path.isdir(".\\" + Fv):
                             Path = os.getcwd() + "\\" + Fv
-                            Boardversion = NProc[0] + "_" + NewVersion
+                            Board_version = NProc[0] + "_" + NewVersion
                         if (Platform_Flag(NProc) == "R24"):
-                            Boardversion = NProc[1] + "_" + NewVersion
-                        if os.path.isfile(Path + "\\" + Boardversion + ".bin") or os.path.isfile(Path + "\\" + Boardversion + "_16.bin") or os.path.isfile(Path + "\\" + Boardversion + "_32.bin"):# For 16MB BIOS
-                            if os.path.isfile(Path + "\\" + Boardversion[:3] + ".xml"):
+                            Board_version = NProc[1] + "_" + NewVersion
+                        if os.path.isfile(Path + "\\" + Board_version + ".bin") or os.path.isfile(Path + "\\" + Board_version + "_16.bin") or os.path.isfile(Path + "\\" + Board_version + "_32.bin"):# For 16MB BIOS
+                            if os.path.isfile(Path + "\\" + Board_version[:3] + ".xml"):
                                 if os.path.isdir(".\\" + ("_").join(NProc)):# Check Pkg Folder Exist
                                     Copy_Release_Files_AMD(Fv, ("_").join(NProc), NewVersion)
                                 else:
                                     print("Pkg " + ("_").join(NProc) + " can't find.")
-                        print(Boardversion + "_16.bin & " + Boardversion + ".xml rename succeeded.")
-    if len(Matchfolderlist) == 0 or len(ProcessProjectList) == 0:
+                        print(Board_version + "_16.bin & " + Board_version + ".xml rename succeeded.")
+    if len(Match_folder_list) == 0 or len(ProcessProjectList) == 0:
         print("Can't find anything Fv folder.\n")
 
     #=================Check Tool Version Is Match In Table======================================
@@ -451,25 +451,25 @@ if __name__ == '__main__':
                 (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
                 (Platform_Flag(NProc) == "Intel G10")) and \
                 os.path.isdir(".\\" + ("_").join(NProc) + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)"):
-                Toolversiontablepath = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
-                Toolversioninfo = ReadToolVersionTable(Toolversiontablepath)
+                Tool_version_table_path = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
+                Tool_version_info = ReadToolVersionTable(Tool_version_table_path)
                 Check = "Match"
-                for name, type, verinfo, path, note in Toolversioninfo:
+                for name, type, verinfo, path, note in Tool_version_info:
                     ver = ChangeVersionInfo(verinfo)
                     #date = ChangeDataInfo(dateinfo)
-                    CompareInfo(NProc, name, ver, path, Toolversiontablepath)
+                    CompareInfo(NProc, name, ver, path, Tool_version_table_path)
             #======For ADM G5 and late
             elif ((Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "S25") or \
                 (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or \
                 (Platform_Flag(NProc) == "T25") or (Platform_Flag(NProc) == "T26") or\
                 (Platform_Flag(NProc) == "T27") ) and \
                 os.path.isdir(".\\" + ("_").join(NProc) + "\\Capsule\\Windows"):
-                Toolversiontablepath = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
-                Toolversioninfo = ReadToolVersionTable(Toolversiontablepath)
+                Tool_version_table_path = ".\\" + ("_").join(NProc) + "\\FactoryUtility\\ToolVersion.xlsx"
+                Tool_version_info = ReadToolVersionTable(Tool_version_table_path)
                 Check = "Match"
-                for name, type, verinfo, path, note in Toolversioninfo:
+                for name, type, verinfo, path, note in Tool_version_info:
                     ver = ChangeVersionInfo(verinfo)
-                    CompareInfo(NProc, name, ver, path, Toolversiontablepath)
+                    CompareInfo(NProc, name, ver, path, Tool_version_table_path)
     except ValueError:
         pass
         #print("\n"+"Table Format "+Fore.RED+"Error"+".\n")
@@ -484,13 +484,13 @@ if __name__ == '__main__':
         (Platform_Flag(OldProcPkgInfo) == "Intel G5") or (Platform_Flag(OldProcPkgInfo) == "Intel G6") or \
         (Platform_Flag(OldProcPkgInfo) == "Intel G8") or (Platform_Flag(OldProcPkgInfo) == "Intel G9") or \
         (Platform_Flag(OldProcPkgInfo) == "Intel G10"):
-        CheckPkg(NewProcPkgInfo, NewVersion)# Check new release Pkg is OK?
-        PrintBiosBuildDate(Matchfolderlist, BiosBuildDate)
+        CheckPkg(NewProcPkgInfo)# Check new release Pkg is OK?
+        PrintBiosBuildDate(Match_folder_list, BiosBuildDate)
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
     #======For AMD Check
     else:
         CheckPkg_AMD(NewProcPkgInfo, NewVersion)# Check new release Pkg is OK?
-        PrintBiosBuildDate(Matchfolderlist, BiosBuildDate)
+        PrintBiosBuildDate(Match_folder_list, BiosBuildDate)
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
     print("\nFinally pkg please compare with leading project.\n")
     os.system('Pause')

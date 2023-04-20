@@ -1,0 +1,613 @@
+import os, logging, struct
+from colorama import Fore
+from re import sub, search
+from time import sleep
+from xlwings import constants
+import xlwings as xw
+
+from ReleasePkgLib import *
+from .Platform import Platform_Flag
+
+
+def CheckBiosBuildDate(Match_folder_list):
+    BiosBuildDate = {}
+    for Fv in Match_folder_list:
+        time = ""
+        if os.path.isdir(".\\" + Fv):
+            Path = ".\\" + Fv + "\\Combined\\"
+            for root,dirs,files in os.walk(Path):
+                for name in files:
+                    if ".inf" in name:
+                        pattern = r"\d+/\d+/\d+"
+                        File = open(root + "\\" + name, "r+")
+                        Str_list = File.read()
+                        searchObj = search(pattern, Str_list)
+                        if searchObj:
+                            time = searchObj.group(0)
+                            File.close()
+                            break
+                        else:
+                            File.close()
+        if time == "":
+            print(Fore.RED + "Check Build Date fail.")
+        BiosBuildDate[Fv.split("_")[1]] = time
+    return(BiosBuildDate)
+
+
+def ModifyExcelData(Sheet, Modify_Data , Version):
+    if not any(c.isdigit() or c.isnumeric() for c in Version):
+        return
+    Sheet_range = 'A1:A100'
+    if Modify_Data == 'VERSION':
+        logging.debug('VERSION')
+        count = 0
+        for char in Version:
+            if char.isdigit():
+                count += 1
+            if count == 9:
+                Sheet_range = 'B8:B12'
+                logging.debug('ME Version:' + str(Version))
+            elif count == 6:
+                Sheet_range = 'B3:B7'
+                logging.debug('BIOS Version:' + str(Version))
+
+    if Modify_Data == 'ID':
+        if Version == 'BIOS 000000':
+            Sheet_range = 'B4'
+            Version = '000000'
+        elif Version == 'ME 000000':
+            Sheet_range = 'B9'
+            Version = '000000'
+
+    if Modify_Data == 'PART NUMBER':
+        if Version == 'BIOS P00000-000':
+            Sheet_range = 'B3:B7'
+            Version = 'P00000-000'
+        elif Version == 'ME P00000-000':
+            Sheet_range = 'B8:B12'
+            Version = 'P00000-000'
+    for row in Sheet.range(Sheet_range):
+        for cell in row:
+            if cell.value and Modify_Data in cell.value:
+                logging.debug(cell.address + ' = '+ Modify_Data)
+                old_version = str(cell.offset(0, 1).value)
+                cell.offset(0, 1).value = "" + str(Version)
+                if old_version != cell.offset(0, 1).value:
+                    cell.offset(0, 1).api.Font.Color = 0x00B050
+
+
+def FindOldMEVersion(Sheet):
+    for row in Sheet.range('B8:B12'):
+        for cell in row:
+            if cell.value and 'VERSION' in cell.value:
+                logging.debug('Old ME Version = '+ cell.offset(0, 1).value)
+                return(cell.offset(0, 1).value)
+
+
+def GetBinaryData(Match_folder_list, FindData, Offset, DataSize, Unpack_format):
+    logging.debug("Get Binary Data Start.")
+    for Fv in Match_folder_list:
+        BinaryData = ""
+        Path = ".\\" + Fv
+        if os.path.isdir(Path):
+            for root, dirs, files in os.walk(Path):
+                for name in files:
+                    if name.find("_32.bin") != -1:
+                        logging.debug("find BIOS binary: " + name)
+                        with open(root + "\\" + name, "rb") as BinaryFile:
+                            FileData = BinaryFile.read()
+                            Data_Str_index = FileData.find(FindData)
+                        if Data_Str_index == -1:
+                            logging.debug(Fore.RED + 'Can not find Data in Binary')
+                        else:
+                            Data_End_index = Data_Str_index + len(FindData) + Offset + DataSize
+                            VersionData = FileData[Data_Str_index + len(FindData) + Offset:Data_End_index]
+                            byte_sequence = struct.unpack(Unpack_format, VersionData)
+                            BinaryData = '.'.join(map(str, byte_sequence))
+                        BinaryFile.close()
+        if BinaryData == "":
+            logging.debug("Get Binary Data failed.")
+    return (BinaryData)
+
+
+def GetMrcVersion(Match_folder_list):
+    logging.debug("Get Mrc Version Start.")
+    Version = ""
+    for Fv in Match_folder_list:
+        if (Platform_Flag(Fv) == "Intel G5"): #Block Intel G5 for MRC Version error.
+            return (Version)
+        if (Platform_Flag(Fv) == "Intel G6"): #Intel G6 offset different with other generations.
+            Offset = 4
+        else:
+            Offset = 0
+    FindData = b'MRCVER_'
+    UnpackDataSize = '>4B'
+    DataSize = 0x04
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get MRC Version fail.")
+    return (Version)
+
+
+def GetMEVersion(Match_folder_list):
+    logging.debug("Get ME Version Start.")
+    Version = ""
+    Offset = 0x94
+    FindData = b'RBEP.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get ISH Version fail.")
+    return (Version)
+
+
+def GetIshVersion(Match_folder_list):
+    logging.debug("Get ISH Version Start.")
+    Version = ""
+    Offset = 0x94
+    for Fv in Match_folder_list:
+        if (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 ISH offset.
+            Offset = 0x64
+    FindData = b'ISHC.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get ISH Version fail.")
+    return (Version)
+
+
+def GetPmcVersion(Match_folder_list):
+    logging.debug("Get PMC Version Start.")
+    Version = ""
+    Offset = 0x94
+    for Fv in Match_folder_list:
+        if (Platform_Flag(Fv) == "Intel G6"): #Modify Intel G6 PMC offset.
+            Offset = 0x64
+        elif (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 PMC offset.
+            Offset = 0xF4
+    FindData = b'PMCP.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get PMC Version fail.")
+    return (Version)
+
+
+def GetNphyVersion(Match_folder_list):
+    logging.debug("Get ME Nphy Version Start.")
+    Version = ""
+    Offset = 0xC4
+    FindData = b'NPHY.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    if Version == "":
+        logging.debug("Get NPHY Version fail.")
+    return (Version)
+
+
+def GetSphyVersion(Match_folder_list):
+    logging.debug("Get ME Sphy Version Start.")
+    Version = ""
+    Offset = 0x184
+    FindData = b'SPHY.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get SPHY Version fail.")
+    return (Version)
+
+
+def GetPchcVersion(Match_folder_list):
+    logging.debug("Get ME PCHC Version Start.")
+    Version = ""
+    Offset = 0x94
+    FindData = b'PCHC.man'
+    UnpackDataSize = '<4H'
+    DataSize = 8
+    Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
+    version_list = Version.split('.')
+    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+    Version = '.'.join(new_version_list)
+    if Version == "":
+        logging.debug("Get PCHC Version fail.")
+    return (Version)
+
+def PrintBiosBuildDate(Match_folder_list, BiosBuildDate):
+    for Fv in Match_folder_list:
+        print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
+
+
+def CheckFileChecksum(Match_folder_list, NewVersion):
+    try:
+        BiosFileChecksum = {}
+        for NProc in Match_folder_list:
+            path = ".\\" + NProc
+            if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
+                (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+                (Platform_Flag(NProc) == "Intel G10"):
+                #======If Intel DM 400 16MB Binary
+                if (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin") and \
+                    os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin")) or \
+                    (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_12.bin") and \
+                    os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin")):
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+                #======If Intel DM 800/600 32MB binary
+                if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin"):
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+            #======If AMD
+            else:
+                if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin") or \
+                    os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin"):
+                    for root,dirs,files in os.walk(path):
+                        for name in files:
+                            if name.find("_16.bin") != -1:
+                                with open(path + "\\" + name, 'rb') as f:
+                                    content = f.read()
+                                    binary_sum = sum(bytearray(content))
+                                    binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                                    f.close()
+                                BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+                if os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin"):
+                    with open(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_32.bin", 'rb') as f:
+                        content = f.read()
+                        binary_sum = sum(bytearray(content))
+                        binary_sum = hex(binary_sum & 0xFFFFFFFF)
+                        f.close()
+                    BiosFileChecksum[NProc.split("_")[1]] = binary_sum[2:]
+        logging.debug('BiosFileChecksum = ' + str(BiosFileChecksum))
+        return(BiosFileChecksum)
+    except:
+        print(Fore.RED + "File Checksum Get Failed!")
+        return 0
+
+
+def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
+    for NProc in NewProcPkgInfo:
+        path = ".\\" + ("_").join(NProc)
+        logging.debug(str(BiosBinaryChecksum))
+        #======If Intel
+        if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
+            (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
+            (Platform_Flag(NProc) == "Intel G10"):
+            if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_12.bin"):
+                print(NProc[2] + "_" + NProc[3] + "_16.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
+            if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_32.bin"):
+                print(NProc[2] + "_" + NProc[3] + "_32.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
+        #======If AMD
+        else:
+            if (Platform_Flag(NProc) == "R26") or (Platform_Flag(NProc) == "Q26") or (Platform_Flag(NProc) == "Q27") or (Platform_Flag(NProc) == "S25"):
+                print(NProc[0] + "_" + NewVersion + ".bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[0]].upper()))
+            if Platform_Flag(NProc) == "R24" :
+                print(NProc[1] + "_" + NewVersion + ".bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[1]].upper()))
+            if (Platform_Flag(NProc) == "S27") or (Platform_Flag(NProc) == "S29") or (Platform_Flag(NProc) == "T25") or \
+                (Platform_Flag(NProc) == "T26") or (Platform_Flag(NProc) == "T27"):
+                print(NProc[0] + "_" + NewVersion + "_32.bin " + " checksum = 0x{}".format(BiosBinaryChecksum[NProc[0]].upper()))
+
+
+def CheckMEVersion(NProc, Match_folder_list):
+    Version = "11.0.11.1111" # Default version
+    logging.debug('CheckMEVersion Start.')
+    for Fv in Match_folder_list:
+        if not os.path.isdir(".\\" + Fv):
+            path = "..\\"
+        else:
+            path = ".\\"
+        if Fv.split("_")[1] == NProc[2]:
+            if os.path.isdir(path + Fv + "\\ME") and os.path.isfile(path + Fv + "\\ME\\ME.bin"):
+                MEbinary_pattern = r"ME_+[0-9]+[\.]+[0-9]+[\.]+[0-9]+[\.]+[0-9]+.bin"
+                for root,dirs,files in os.walk(path + Fv + "\\ME"):
+                    for name in files:
+                        searchObj = search(MEbinary_pattern, name)
+                        if searchObj != None:
+                            ME_Version = name.split(".bin")[0] #Remove .bin
+                            Version_List = ME_Version.split("_")
+                            for Version in Version_List:
+                                MEbinary_pattern = r"[0-9]+[\.]+[0-9]+[\.]+[0-9]+[\.]+[0-9]"
+                                searchObj = search(MEbinary_pattern, Version)
+                                if searchObj != None:
+                                    logging.debug('ME_Version1:' + Version)
+                                    return Version
+            elif Version == "11.0.11.1111" and os.path.isfile(path + Fv + "\\ME\\ME.inf"):
+                pattern = r"DriverVer.+"
+                File = open(path + Fv + "\\ME\\ME.inf","r+")
+                Str_list = File.read()
+                searchObj = search(pattern, Str_list)
+                if searchObj != None:
+                    Version = searchObj.group(0)[25:27] + ".0." + searchObj.group(0)[28:30] + "." + searchObj.group(0)[31:33] + searchObj.group(0)[34:36]
+                    File.close()
+                logging.debug('ME_Version2:' + Version)
+                return Version
+            else:
+                return Version
+
+
+#Not Used now.
+def SetReleaseNoteVersionValue(Version):
+    RevisionV1075        = {'Revision':                  'A8'}
+    IntelProjectPNV1075  = {'BIOS VERSION Value':        'C6',
+                            'BIOS PART NUMBER Value':    'C7',
+                            'ME VERSION Value':          'C11',
+                            'ME PART NUMBER':            'C12'}
+    IntelInfoV1075       = {'Folder Path':               'A26',
+                            'ODM FTP':                   'A27',
+                            'Folder Path':               'A28',
+                            'Folder Path Value':         'B26',
+                            'ODM FTP Value':             'B27',
+                            'Folder Path Value':         'B28'}
+    IntelHistoryV1075    = {'System BIOS Version':       'A10',
+                            'Target EE phase (DB/SI/PV)':'A11',
+                            'Build Date':                'A12',
+                            'CHECKSUM':                  'A13',
+                            'System BIOS Version Value': 'B10',
+                            'Build Date Value':          'B12',
+                            'CHECKSUM Value':            'B13',
+                            'ME Firmware':               'B35'}
+    IntelHowToFlashV1075 = {'BIOS Flash: From -> To':    'A18'}
+
+
+def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list):
+    print("Platform ReleaseNote Modify...")
+    app = xw.App(visible = False,add_book = False)
+    app.display_alerts = False
+    app.screen_updating = False
+    filepath = ReleaseFileName
+    logging.debug('app books open...')
+    wb = app.books.open(filepath)
+    if "v1.08" in wb.sheets['Revision'].range('A8').value or \
+    "v1.07" in wb.sheets['Revision'].range('A8').value or \
+    "v1.06" in wb.sheets['Revision'].range('A8').value:
+        try:
+            #======If Intel DM G5 and late
+            if (Platform_Flag(ReleaseFileName) == "Intel G5") or (Platform_Flag(ReleaseFileName) == "Intel G6") or \
+                (Platform_Flag(ReleaseFileName) == "Intel G8") or (Platform_Flag(ReleaseFileName) == "Intel G9") or \
+                (Platform_Flag(ReleaseFileName) == "Intel G10"):
+                logging.debug('If Intel DM G5 and late')
+                MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
+                logging.debug('wb.sheets IntelProjectPN')
+                IntelProjectPN = wb.sheets['IntelProjectPN']
+
+                logging.debug('wb.sheets IntelPlatformInfo')
+                IntelInfo = wb.sheets['IntelPlatformInfo']
+                if (Platform_Flag(ReleaseFileName) == "Intel G9") or (Platform_Flag(ReleaseFileName) == "Intel G10"):
+                    logging.debug('wb.sheets IntelPlatformHistory_FY23')
+                    IntelHistory = wb.sheets['IntelPlatformHistory_FY23']
+
+                    logging.debug('wb.sheets IntelPlatformHowToFlash_FY23')
+                    IntelHowToFlash = wb.sheets['IntelPlatformHowToFlash_FY23']
+                else:
+                    logging.debug('wb.sheets IntelPlatformHistory')
+                    IntelHistory = wb.sheets['IntelPlatformHistory']
+
+                    logging.debug('wb.sheets IntelPlatformHowToFlash')
+                    IntelHowToFlash = wb.sheets['IntelPlatformHowToFlash']
+                #======Marco work
+                logging.debug('Marco work')
+                IntelHistory.range('C:C').api.Insert(constants.InsertShiftDirection.xlShiftToRight) # Can't Protection worksheet
+                CopyValues = IntelHistory.range('B9:B100').options(ndim=2).value
+                IntelHistory.range('C9:C100').value = CopyValues
+                IntelHistory.range('C9:C100').api.Font.Color = 0x000000
+                logging.debug('Init finish.')
+                #======Modify 'System BIOS Version' 'Build Date' 'CHECKSUM'
+                logging.debug('Modify ,System BIOS ,Version ,Build Date ,CHECKSUM')
+                check = ""
+                if (NewBuildID == "" or NewBuildID == "0000"):
+                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) #BIOS Version
+                    logging.debug("VERSION")
+                    ModifyExcelData(IntelProjectPN,'VERSION',str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) #BIOS Version
+                    ModifyExcelData(IntelHistory,'BIOS Build Version',"0000") #BIOS Version
+                else:
+                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
+                    ModifyExcelData(IntelProjectPN,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
+                    ModifyExcelData(IntelHistory,'BIOS Build Version',NewBuildID) #NewBuildID
+                ModifyExcelData(IntelHistory,'Build Date',BiosBuildDate[ReleaseFileName.split("_")[2]]) #BUILD DATE
+                ModifyExcelData(IntelHistory,'CHECKSUM',"0x" + BiosBinaryChecksum[NProc[2]].upper()) #CHECK SUM
+                ModifyExcelData(IntelHistory,'MRC',BiosMrcVersion) #MRC
+                if(Platform_Flag(ReleaseFileName) == "Intel G9") or (Platform_Flag(ReleaseFileName) == "Intel G10"):
+                    ModifyExcelData(IntelHistory,'ISH FW version',"HpSigned_ishC_ " + BiosIshVersion) #ISH
+                else:
+                    ModifyExcelData(IntelHistory,'ISH FW version',"" + BiosIshVersion) #ISH
+                ModifyExcelData(IntelHistory,'PMC',BiosPmcVersion) #PMC
+                ModifyExcelData(IntelHistory,'NPHY',BiosNphyVersion) #NPHY
+                ModifyExcelData(IntelProjectPN,'PART NUMBER',"BIOS P00000-000") #BIOS PART NUMBER
+                ModifyExcelData(IntelProjectPN,'ID',"BIOS 000000") #BIOS PART NUMBER ID
+                check = "pass"
+                if not check == "pass":
+                    print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
+                #======ME Version
+                logging.debug('ME Version')
+                if not MEVersion == "11.0.11.1111":
+                    pattern = r'[0-9]+[\.][0-9]+[\.][0-9]+[\.]\d{4}'
+                    check = ""
+                    OldMEVersion = FindOldMEVersion(IntelProjectPN)
+                    logging.debug('ME Version : ' + MEVersion)
+                    logging.debug('Old ME Version : ' + OldMEVersion)
+                    ModifyExcelData(IntelProjectPN, 'VERSION', MEVersion)
+                    if MEVersion != OldMEVersion:
+                        ModifyExcelData(IntelProjectPN,'PART NUMBER',"ME P00000-000") #ME PART NUMBER
+                        ModifyExcelData(IntelProjectPN,'ID',"ME 000000") #ME PART NUMBER ID
+                    check = "pass"
+                if not check == "pass":
+                    print("Can't find ['ME Firmware']")
+                #======Modify 'Folder Path'
+                check = ""
+                for a in range(20, 40):
+                    if IntelInfo.range('A'+str(a)).value == 'Folder Path' and \
+                        IntelInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
+                        IntelInfo.range('A'+str(a+2)).value == 'Folder Path':
+                        Folder_Path_HP = IntelInfo.range('B'+str(a)).value
+                        Folder_Path_Quanta = IntelInfo.range('B'+str(a+2)).value
+                        pattern = r'\w+_\w+_\w\d\d_\w+.7z'
+                        Re_Folder_Path_HP = sub(pattern, ("_").join(NProc) + ".7z", Folder_Path_HP)
+                        Re_Folder_Path_Quanta = sub(pattern, ("_").join(NProc) + ".7z", Folder_Path_Quanta)
+                        IntelInfo.range('B'+str(a)).value = Re_Folder_Path_HP
+                        IntelInfo.range('B'+str(a+2)).value = Re_Folder_Path_Quanta
+                        logging.debug('Folder Path fill finish.')
+                        check = "pass"
+                        break
+                if not check == "pass":
+                    print("Can't find ['Folder Path', 'ODM FTP', 'Folder Path']")
+                #======Modify 'HowToFlash'
+                check = ""
+                for a in range(10, 35):
+                    if IntelHowToFlash.range('A'+str(a)).value == "BIOS Flash: From -> To ":
+                        IntelHowToFlash.range(str(a+2)+":"+str(a+2)).api.Insert()
+                        CopyValues = IntelHowToFlash.range('A'+str(a+1)+':K'+str(a+1)).options(ndim = 2).value
+                        IntelHowToFlash.range('A'+str(a+2)+':K'+str(a+2)).expand('table').value = CopyValues[0]
+                        pattern = r'\d\d.\d\d.\d\d.*'
+                        if ("->") not in str(IntelHowToFlash.range('A'+str(a+1)).value):
+                            IntelHowToFlash.range('A'+str(a+1)).value = "00.00.00-> " + str(IntelHowToFlash.range('A'+str(a+1)).value)
+                        Flash_Version_Left = sub(pattern, IntelHowToFlash.range('A'+str(a+1)).value.split("->")[1].strip(), IntelHowToFlash.range('A'+str(a+1)).value.split("->")[0])
+                        if (NewBuildID == "" or NewBuildID == "0000"):
+                            Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6], IntelHowToFlash.range('A'+str(a+1)).value.split("->")[1])
+                        else:
+                            Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]+"_"+NewBuildID, IntelHowToFlash.range('A'+str(a+1)).value.split("->")[1])
+                        IntelHowToFlash.range('A'+str(a+1)).value = Flash_Version_Left + "->" + Flash_Version_Right
+                        logging.debug('HowToFlash fill finish.')
+                        check = "pass"
+                        break
+                if not check == "pass":
+                    print("Can't find ['BIOS Flash: From -> To ']")
+                #======Modify 'HowToFlash' picture position
+                flag = "0"
+                for a in range(18, 100):
+                    if IntelHowToFlash.range('E'+str(a)).value == "The User Account Control (UAC) setting needs to be set to DISABLED.":
+                        pic_row = str(a-1)
+                        flag = "1"
+                        break
+                logging.debug('Find image location.')
+                if flag == "1" and len(IntelHowToFlash.pictures) == 1:
+                    pic_name = IntelHowToFlash.pictures[0].name
+                else:
+                    flag == "0"
+                logging.debug('Find image name. flag:' + flag)
+                if flag == "1":
+                    if IntelHowToFlash.pictures[0].name == pic_name:
+                        i = 0
+                        for i in range(10):
+                            if (int(IntelHowToFlash.pictures[0].top) != int(IntelHowToFlash.range('E'+pic_row).top+13.00)):
+                                #print(int(IntelHowToFlash.pictures[0].top), int(IntelHowToFlash.range('E'+pic_row).top+13.00))
+                                IntelHowToFlash.pictures[0].top = IntelHowToFlash.range('E'+pic_row).top+13.00
+                                sleep(0.5)
+                                IntelHowToFlash.pictures[0].top = IntelHowToFlash.range('E'+pic_row).top+13.00
+                                #print(int(IntelHowToFlash.pictures[0].top), int(IntelHowToFlash.range('E'+pic_row).top+13.00))
+                else:
+                    print("Unable to locate.\n")
+                logging.debug('HowToFlash Pic position modify finish. \nModifyReleaseNote finish.')
+            #======If AMD G5 DM
+            elif (Platform_Flag(ReleaseFileName) == "R26") or (Platform_Flag(ReleaseFileName) == "R24") or (Platform_Flag(ReleaseFileName) == "S25") or \
+                    (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
+                    (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
+                AMDHistory = wb.sheets['AMDPlatformHistory']
+                AMDInfo = wb.sheets['AMDPlatformInfo']
+                AMDHowToFlash = wb.sheets['AMDPlatformHowToFlash']
+                #======Marco work
+                AMDHistory.range('C:C').api.Insert(constants.InsertShiftDirection.xlShiftToRight)
+                CopyValues = AMDHistory.range('B9:B100').options(ndim = 2).value
+                AMDHistory.range('C9:C100').value = CopyValues
+                AMDHistory.range('C9:C100').api.Font.Color = 0x000000
+                logging.debug('Init finish.')
+                #======Modify 'System BIOS Version' 'Build Date' 'CHECKSUM'
+                check = ""
+                for a in range(9, 30):
+                    if AMDHistory.range('A'+str(a)).value == 'System BIOS Version' and \
+                        AMDHistory.range('A'+str(a+1)).value == 'Target EE phase (DB/SI/PV)' and \
+                        AMDHistory.range('A'+str(a+2)).value == 'Build Date' and \
+                        AMDHistory.range('A'+str(a+3)).value == 'CHECKSUM':
+                        if (NewBuildID == "" or NewBuildID == "0000"):
+                            AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]
+                        else:
+                            AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
+                        AMDHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]]
+                        AMDHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper()
+                        logging.debug('Version fill finish.')
+                        check = "pass"
+                        break
+                if not check == "pass":
+                    print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
+                #======Modify 'Folder Path'
+                check = ""
+                for a in range(20, 40):
+                    if AMDInfo.range('A'+str(a)).value == 'Folder Path' and \
+                        AMDInfo.range('A'+str(a+1)).value == 'ODM FTP' and \
+                        AMDInfo.range('A'+str(a+2)).value == 'Folder Path':
+                        Folder_Path_HP = AMDInfo.range('B'+str(a)).value
+                        Folder_Path_Quanta = AMDInfo.range('B'+str(a+2)).value
+                        if Platform_Flag(ReleaseFileName) == "R24":
+                            pattern = r'\w+_\w\d\d_\d+.\d+.\d+.7z'
+                        else:
+                            pattern = r'\w\d\d_\w+.7z'
+                        Re_Folder_Path_HP = sub(pattern, ("_").join(NProc) + ".7z", Folder_Path_HP)
+                        Re_Folder_Path_Quanta = sub(pattern, ("_").join(NProc) + ".7z", Folder_Path_Quanta)
+                        AMDInfo.range('B'+str(a)).value = Re_Folder_Path_HP
+                        AMDInfo.range('B'+str(a+2)).value = Re_Folder_Path_Quanta
+                        logging.debug('Folder Path fill finish.')
+                        check = "pass"
+                        break
+                if not check == "pass":
+                    print("Can't find ['Folder Path', 'ODM FTP', 'Folder Path']")
+                #======Modify 'HowToFlash'
+                check = ""
+                for a in range(10, 35):
+                    if AMDHowToFlash.range('A'+str(a)).value == "BIOS Flash: From -> To ":
+                        AMDHowToFlash.range(str(a+2)+':'+str(a+2)).api.Insert()
+                        CopyValues = AMDHowToFlash.range('A'+str(a+1)+':K'+str(a+1)).options(ndim=2).value
+                        AMDHowToFlash.range('A'+str(a+2)+':K'+str(a+2)).expand('table').value = CopyValues[0]
+                        pattern = r'\d\d.\d\d.\d\d.*'
+                        if Platform_Flag(ReleaseFileName) == "R24":
+                            Flash_Version_Left = sub(pattern, AMDHowToFlash.range('A'+str(a+1)).value.split("->")[1].strip(), AMDHowToFlash.range('A'+str(a+1)).value.split(" ->")[0])
+                        else:
+                            Flash_Version_Left = sub(pattern, AMDHowToFlash.range('A'+str(a+1)).value.split("to")[1].strip(), AMDHowToFlash.range('A'+str(a+1)).value.split("to")[0])
+                        if (NewBuildID == "" or NewBuildID == "0000"):
+                            if Platform_Flag(ReleaseFileName) == "R24":
+                                Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6], AMDHowToFlash.range('A'+str(a+1)).value.split(" ->")[1])
+                            else:
+                                Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6], AMDHowToFlash.range('A'+str(a+1)).value.split("to")[1])
+                        else:
+                            if Platform_Flag(ReleaseFileName) == "R24":
+                                Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]+"_"+NewBuildID, AMDHowToFlash.range('A'+str(a+1)).value.split(" ->")[1])
+                            else:
+                                Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]+"_"+NewBuildID, AMDHowToFlash.range('A'+str(a+1)).value.split("to")[1])
+                        if Platform_Flag(ReleaseFileName) == "R24":
+                            AMDHowToFlash.range('A'+str(a+1)).value = Flash_Version_Left + " ->" + Flash_Version_Right
+                        else:
+                            AMDHowToFlash.range('A'+str(a+1)).value = Flash_Version_Left + "to" + Flash_Version_Right
+                        logging.debug('HowToFlash fill finish. \nModifyReleaseNote finish.')
+                        check = "pass"
+                        break
+                if not check == "pass":
+                    print("Can't find ['BIOS Flash: From -> To ']")
+            wb.save()
+            wb.close()
+            app.quit()
+            print("Platform ReleaseNote Modify " + Fore.GREEN + "succeeded.\n")
+        except:
+            wb.close()
+            app.quit()
+            print("ReleaseNote Modify " + Fore.RED + "Failed!\n")
+            return 0
+    else:
+        Old_ReleaseNoteVersion = wb.sheets['Revision'].range('A8').value
+        wb.close()
+        app.quit()
+        print("ReleaseNote Version is " + Old_ReleaseNoteVersion + " Not in 1.06~1.08 Version, Modify Skip.\n")
