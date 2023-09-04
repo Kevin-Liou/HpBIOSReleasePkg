@@ -490,7 +490,7 @@ if __name__ == '__main__':
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
     #======For AMD Check
     else:
-        CheckPkg_AMD(NewProcPkgInfo, NewVersion)# Check new release Pkg is OK?
+        CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID)# Check new release Pkg is OK?
         PrintBiosBuildDate(Match_folder_list, BiosBuildDate)
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
     print("\nFinally pkg please compare with leading project.\n")
