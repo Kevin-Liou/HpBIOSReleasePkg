@@ -54,7 +54,7 @@ def CheckPkg(NewProcPkgInfo):
     else:   print("New release Pkg made " + Fore.RED + "failed.")
 
 
-def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
+def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
     Check="False"
     if (Platform_Flag(NewProcPkgInfo) == "R24") or (Platform_Flag(NewProcPkgInfo) == "Q26") or (Platform_Flag(NewProcPkgInfo) == "Q27"):
         for NProc in NewProcPkgInfo:
@@ -65,7 +65,8 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
                 NID=NProc[1]
             Path=".\\"+("_").join(NProc)
             if os.path.isdir(Path):
-                if os.path.isfile(Path+"\\Capsule\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\"+Board_version+".inf"):
+                if (os.path.isfile(Path+"\\Capsule\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\"+Board_version+".inf"))\
+                or(os.path.isfile(Path+"\\Capsule\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\"+Board_version+NewBuildID[-2:]+".inf")) :
                     if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_16.bin")) and \
                         os.path.isfile(Path+"\\Capsule\\"+NID.lower()+"_"+NewVersion+".cat"):
                         if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+".bin"):
@@ -86,7 +87,8 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
             Board_version=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
             if os.path.isdir(Path):
-                if os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"):
+                if (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"))\
+                or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) :
                     if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_16.bin")) and \
                         os.path.isfile(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"):
                         if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+".bin"):
@@ -103,12 +105,13 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion):
                     print(Path+"\\Capsule\\Windows\\"+Board_version+".inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
             else:print(Path+" can't find.")
     if (Platform_Flag(NewProcPkgInfo) == "S27") or (Platform_Flag(NewProcPkgInfo) == "S29") or (Platform_Flag(NewProcPkgInfo) == "T25") or \
-        (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"):# G5 and G6 AMD R26 AMD S25
+        (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"):#G6/G8 AMD T26 S27
         for NProc in NewProcPkgInfo:
             Board_version=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
             if os.path.isdir(Path):
-                if os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"):
+                if (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"))\
+                    or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) :
                     if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_32.bin")) and \
                         os.path.isfile(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"):
                         if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+".bin"):

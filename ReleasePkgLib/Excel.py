@@ -171,11 +171,12 @@ def GetPmcVersion(Match_folder_list):
     UnpackDataSize = '<4H'
     DataSize = 8
     Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
-    version_list = Version.split('.')
-    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
-    Version = '.'.join(new_version_list)
     if Version == "":
         logging.debug("Get PMC Version fail.")
+    else :
+        version_list = Version.split('.')
+        new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+        Version = '.'.join(new_version_list)
     return (Version)
 
 
@@ -200,11 +201,12 @@ def GetSphyVersion(Match_folder_list):
     UnpackDataSize = '<4H'
     DataSize = 8
     Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
-    version_list = Version.split('.')
-    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
-    Version = '.'.join(new_version_list)
     if Version == "":
         logging.debug("Get SPHY Version fail.")
+    else :
+        version_list = Version.split('.')
+        new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+        Version = '.'.join(new_version_list)
     return (Version)
 
 
@@ -216,11 +218,12 @@ def GetPchcVersion(Match_folder_list):
     UnpackDataSize = '<4H'
     DataSize = 8
     Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
-    version_list = Version.split('.')
-    new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
-    Version = '.'.join(new_version_list)
     if Version == "":
         logging.debug("Get PCHC Version fail.")
+    else :
+        version_list = Version.split('.')
+        new_version_list = ['{:02d}'.format(int(x)) for x in version_list]
+        Version = '.'.join(new_version_list)
     return (Version)
 
 def PrintBiosBuildDate(Match_folder_list, BiosBuildDate):
