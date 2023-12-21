@@ -542,7 +542,10 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         else:
                             AMDHistory.range('B'+str(a)).value = NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID
                         AMDHistory.range('B'+str(a+2)).value = BiosBuildDate[ReleaseFileName.split("_")[2]]
-                        AMDHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper()
+                        try :
+                            AMDHistory.range('B'+str(a+3)).value = "0x" + BiosBinaryChecksum[NProc[2]].upper()
+                        except :        # maybe some platform donot have .bin in root folder
+                            AMDHistory.range('B'+str(a+3)).value = "0x"
                         logging.debug('Version fill finish.')
                         check = "pass"
                         break
@@ -607,7 +610,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
         except:
             wb.close()
             app.quit()
-            print("ReleaseNote Modify " + Fore.RED + "Failed!\n")
+            print("Platform ReleaseNote Modify " + Fore.RED + "Failed!\n")
             return 0
     else:
         Old_ReleaseNoteVersion = wb.sheets['Revision'].range('A8').value
