@@ -109,23 +109,31 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
         for NProc in NewProcPkgInfo:
             Board_version=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
-            if os.path.isdir(Path):
+            if os.path.isdir(Path):  # these platform could have 00 in the end of version and the beginning of .cat is uppercase
                 if (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"))\
-                    or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) :
-                    if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_32.bin")) and \
-                        os.path.isfile(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"):
+                    or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) \
+                    or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.inf")) :
+                    if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") \
+                        or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_32.bin") ) \
+                        and \
+                        (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"_"+NewVersion+".cat")\
+                        or os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.cat")):
                         if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+".bin"):
-                            if os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".bin") and os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".inf"):
+                            if (os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".bin") \
+                                or os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+"00.bin" ))\
+                                and \
+                                (os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".inf")\
+                                or os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+"00.inf")):
                                 if os.path.isfile(Path+"\\XML\\"+NProc[0]+".xml"):
                                     if not os.path.isfile(Path+"DCI.7z"):
                                         Check="True"
                                     else:print(Path+"DCI.7z"+" can find.")
                                 else:print(Path+"\\XML\\"+NProc[0]+".xml"+" can't find.")
-                            else:print(Path+"\\HPFWUPDREC\\"+Board_version+".bin"+" can't find.");print(Path+"\\HPFWUPDREC\\"+Board_version+".inf"+" can't find.");
+                            else:print(Path+"\\HPFWUPDREC\\"+Board_version+"(00).bin"+" can't find.");print(Path+"\\HPFWUPDREC\\"+Board_version+"(00).inf"+" can't find.");
                         else:print(Path+"\\Global\\BIOS\\"+Board_version+".bin"+" can't find.")
                     else:print(Path+"\\AMDFLASH\\"+Board_version+".bin or _32.bin"+" can't find.")
-                else:print(Path+"\\Capsule\\Windows\\"+Board_version+".bin"+" can't find.");\
-                    print(Path+"\\Capsule\\Windows\\"+Board_version+".inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
+                else:print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).bin"+" can't find.");\
+                    print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+"(0).cat"+" can't find.");
             else:print(Path+" can't find.")
     if Check=="True":   print("New release Pkg made "+Fore.GREEN+"successfully.\n")
     else:   print("New release Pkg made "+Fore.RED+"failed.")
