@@ -1,10 +1,11 @@
-import os, logging, struct
+import os
+import logging
+import struct
+import xlwings as xw
 from colorama import Fore
 from re import sub, search
 from time import sleep
 from xlwings import constants
-import xlwings as xw
-
 from ReleasePkgLib import *
 from .Platform import Platform_Flag
 
@@ -114,9 +115,9 @@ def GetMrcVersion(Match_folder_list):
     logging.debug("Get Mrc Version Start.")
     Version = ""
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G5"): #Block Intel G5 for MRC Version error.
+        if Platform_Flag(Fv) == "Intel G5": #Block Intel G5 for MRC Version error.
             return (Version)
-        if (Platform_Flag(Fv) == "Intel G6"): #Intel G6 offset different with other generations.
+        if Platform_Flag(Fv) == "Intel G6": #Intel G6 offset different with other generations.
             Offset = 4
         else:
             Offset = 0
@@ -147,7 +148,7 @@ def GetIshVersion(Match_folder_list):
     Version = ""
     Offset = 0x94
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 ISH offset.
+        if Platform_Flag(Fv) == "Intel G8": #Modify Intel G8 ISH offset.
             Offset = 0x64
     FindData = b'ISHC.man'
     UnpackDataSize = '<4H'
@@ -163,9 +164,9 @@ def GetPmcVersion(Match_folder_list):
     Version = ""
     Offset = 0x94
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G6"): #Modify Intel G6 PMC offset.
+        if Platform_Flag(Fv) == "Intel G6": #Modify Intel G6 PMC offset.
             Offset = 0x64
-        elif (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 PMC offset.
+        elif Platform_Flag(Fv) == "Intel G8": #Modify Intel G8 PMC offset.
             Offset = 0xF4
     FindData = b'PMCP.man'
     UnpackDataSize = '<4H'
@@ -236,9 +237,7 @@ def CheckFileChecksum(Match_folder_list, NewVersion):
         BiosFileChecksum = {}
         for NProc in Match_folder_list:
             path = ".\\" + NProc
-            if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-                (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-                (Platform_Flag(NProc) == "Intel G10"):
+            if Platform_Flag(NProc) in Intel_Platforms:
                 #======If Intel DM 400 16MB Binary
                 if (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin")) or \
@@ -290,9 +289,7 @@ def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
         path = ".\\" + ("_").join(NProc)
         logging.debug(str(BiosBinaryChecksum))
         #======If Intel
-        if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-            (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-            (Platform_Flag(NProc) == "Intel G10"):
+        if Platform_Flag(NProc) in Intel_Platforms:
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_12.bin"):
                 print(NProc[2] + "_" + NProc[3] + "_16.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_32.bin"):
@@ -382,9 +379,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     "v1.06" in wb.sheets['Revision'].range('A8').value:
         try:
             #======If Intel DM G5 and late
-            if (Platform_Flag(ReleaseFileName) == "Intel G5") or (Platform_Flag(ReleaseFileName) == "Intel G6") or \
-                (Platform_Flag(ReleaseFileName) == "Intel G8") or (Platform_Flag(ReleaseFileName) == "Intel G9") or \
-                (Platform_Flag(ReleaseFileName) == "Intel G10"):
+            if Platform_Flag(ReleaseFileName) in Intel_Platforms_G5later:
                 logging.debug('If Intel DM G5 and late')
                 MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
                 logging.debug('wb.sheets IntelProjectPN')
@@ -518,9 +513,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                     print("Unable to locate.\n")
                 logging.debug('HowToFlash Pic position modify finish. \nModifyReleaseNote finish.')
             #======If AMD G5 DM
-            elif (Platform_Flag(ReleaseFileName) == "R26") or (Platform_Flag(ReleaseFileName) == "R24") or (Platform_Flag(ReleaseFileName) == "S25") or \
-                    (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
-                    (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
+            elif Platform_Flag(ReleaseFileName) in AMD_Platforms and Platform_Flag(ReleaseFileName) != "Q26" and Platform_Flag(ReleaseFileName) != "Q27":
                 AMDHistory = wb.sheets['AMDPlatformHistory']
                 AMDInfo = wb.sheets['AMDPlatformInfo']
                 AMDHowToFlash = wb.sheets['AMDPlatformHowToFlash']

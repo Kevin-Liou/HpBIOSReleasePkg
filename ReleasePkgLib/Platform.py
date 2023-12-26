@@ -1,3 +1,10 @@
+Intel_Platforms         = {"Intel G3", "Intel G4", "Intel G5", "Intel G6", "Intel G8", "Intel G9", "Intel G10"}
+Intel_Platforms_G3G4    = {"Intel G3", "Intel G4"}
+Intel_Platforms_G5later = {"Intel G5", "Intel G6", "Intel G8", "Intel G9", "Intel G10"}
+AMD_Platforms           = {"Q26", "Q27", "R26", "R24", "S25", "S27", "S29", "T25", "T26", "T27"}
+AMD_Platforms_Special   = {"R26", "S25", "S27", "S29", "T25", "T26", "T27"}
+AMD_Platforms_ExceptR24 = {"Q26", "Q27", "R26", "S25", "S27", "S29", "T25", "T26", "T27"}
+
 # Check platform is Intel or AMD.
 def Platform_Flag(IDCheck):
     if type(IDCheck) == list:

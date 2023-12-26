@@ -4,10 +4,12 @@
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 #=================================
-import sys, os, glob, logging
+import sys
+import os
+import glob
+import logging
 from shutil import copy, copytree, move, rmtree
 from re import sub, search
-
 from ReleasePkgLib import *
 from .Platform import Platform_Flag
 from .Excel import CheckMEVersion
@@ -43,9 +45,7 @@ def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
     if (Platform_Flag(NewProcPkgInfo) == "R24"):
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[1]
-    if (Platform_Flag(NewProcPkgInfo) == "Intel G4") or (Platform_Flag(NewProcPkgInfo) == "Intel G5") or \
-        (Platform_Flag(NewProcPkgInfo) == "Intel G6") or (Platform_Flag(NewProcPkgInfo) == "Intel G8") or \
-        (Platform_Flag(NewProcPkgInfo) == "Intel G9") or (Platform_Flag(NewProcPkgInfo) == "Intel G10"):
+    if Platform_Flag(NewProcPkgInfo) in Intel_Platforms and Platform_Flag(NewProcPkgInfo) != "Intel G3":
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[2]
     if (Platform_Flag(NewProcPkgInfo) == "Intel G3"):
@@ -119,12 +119,8 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
     # Combined copy to Capsule&HPFWUPDREC.
     #======For G5 and late Fv
     # Check Capsule folder format for G5 and late.
-    if (Platform_Flag(targetFolder) == "Intel G5") or (Platform_Flag(targetFolder) == "Intel G6") or\
-        (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or\
-        (Platform_Flag(targetFolder) == "Intel G10"):
-        if os.path.isdir(target_fullpath + "\\Capsule\\CCG5") and ((Platform_Flag(targetFolder) == "Intel G6") or \
-            (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or \
-            (Platform_Flag(targetFolder) == "Intel G10")):
+    if Platform_Flag(targetFolder) in Intel_Platforms_G5later:
+        if os.path.isdir(target_fullpath + "\\Capsule\\CCG5") and Platform_Flag(targetFolder) != "Intel G5":
             os.rename(target_fullpath + "\\Capsule\\CCG5", target_fullpath + "\\Capsule\\PD_FW")
         if not os.path.isdir(target_fullpath + "\\Capsule\\Windows"):
             os.makedirs(target_fullpath + "\\Capsule\\Windows")
@@ -215,11 +211,13 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             copy(source_fullpath + "\\ME\\" + ME_filename, target_fullpath + "\\METools\\FWUpdate\\HPSignME")
             print(root + "\\" + ME_filename + "(Sign) to " + targetFolder + "\\METools\\FWUpdate\\HPSignME" + " Copy succeeded.")
         if os.path.isfile(source_fullpath + "\\ME\\ME_0101.bin"):# Copy unsign ME file
+            if os.path.isfile(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_0101.bin"):
+                os.remove(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_0101.bin")  # Delete old ME file
             copy(source_fullpath + "\\ME\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW")
             os.rename(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin")
             print(sourceFolder + "\\ME\\" + ME_Version + "(UnSign) to " + targetFolder + "\\METools\\FWUpdate\\MEFW" + " Copy succeeded.")
     #=======For G4 other Fv
-    if (Platform_Flag(targetFolder) == "Intel G4"):
+    if Platform_Flag(targetFolder) == "Intel G4":
         if os.path.isfile(source_fullpath + "\\Combined\\fwu.pfx"):
             for root,dirs,files in os.walk(source_fullpath + "\\Combined"):
                 for name in files:
@@ -302,10 +300,7 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
                 print(sourceFolder + "\\Combined\\" + name + " to " + targetFolder + "\\Capsule" + " Copy succeeded.")
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):# Bin file copy to FPTW&Global
-        if (Platform_Flag(name) == "Q26") or (Platform_Flag(name) == "Q27") or \
-            (Platform_Flag(name) == "R26") or (Platform_Flag(name) == "R24") or \
-            (Platform_Flag(name) == "S25") or (Platform_Flag(name) == "S27") or (Platform_Flag(name) == "S29") or \
-            (Platform_Flag(name) == "T25") or (Platform_Flag(name) == "T26") or (Platform_Flag(name) == "T27"): # 78 AMD 78 R26 78787878787878
+        if Platform_Flag(name) in AMD_Platforms: # 78 AMD 78 R26 78787878787878
             if name.find(NewVersion + "_16.bin") != -1:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
@@ -330,7 +325,7 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
     print()
 
 
-# Find Fv Folder, Add to Match_list
+# Find Fv Folder, Add it to the Match_list and return it
 def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
     Match_list = []
     for Process in ProcessProjectList:
@@ -344,25 +339,25 @@ def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
     return Match_list
 
 
-# Find Fv Zip file
-def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
+# Find Fv Zip file, Add it to the Match_list and return it
+def FindFvZip111(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
     Match_list = []
     Github_PkgVersion = "FFFFFF"
+    # For New Github Fv format version, ex. u21pacman.0.26.0.26.nupkg
+    if len(NewVersion) >= 6:
+        Github_PkgVersion = "." + str(int(NewVersion[0:2])) + "." + str(int(NewVersion[2:4])) + "." + str(int(NewVersion[4:6])) # ex. .0.26.0
+
     for i in range(len(ProcessProjectList)):
         for Dir in os.listdir(".\\"):
-            #======For Old Fv
+            #======For Old Fv format, ex. Fv_S21_960300_0000_BuildJob_5.zip
             Match = "Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_"
             if not NewBuildID == "":
                 Match = "Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_" + NewBuildID
             if Match in Dir:
                 if (str(Dir).find(".zip") != -1) or (str(Dir).find(".7z") != -1):
                     Match_list.append(Dir)
-            #======For New Github Fv
-            if len(NewVersion) >= 6:
-                Github_PkgVersion = "." + str(int(NewVersion[0:2])) + "." + str(int(NewVersion[2:4])) + "." + str(int(NewVersion[4:6]))
-                # GithubMatch = str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower() + Github_PkgVersion
-            #======For U23 Github Fv project name mistake rename
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (Github_PkgVersion in Dir):
+            #======Fix for fv case name error on U23 github, asteroid -> Asteroids
+            if (str(ProcessProjectList[i]).lower() in Dir or str(ProcessProjectList[i]) in Dir) and Github_PkgVersion in Dir:
                 TempDir = Dir.split(".")
                 if TempDir[0] != str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower():
                     TempDir[0] = str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower()
@@ -370,10 +365,49 @@ def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
                     os.rename(".\\" + Dir, ".\\" + TempDir)
                     Dir = TempDir
             #======Rename .nupkg to .zip
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (str(Github_PkgVersion) in Dir) and (str(Dir).find(".nupkg") != -1):
+            if (str(ProcessProjectList[i]).lower() in Dir or str(ProcessProjectList[i]) in Dir) and str(Github_PkgVersion) in Dir and str(Dir).find(".nupkg") != -1:
                 NewDir = str(os.path.splitext(Dir)[0]) + ".zip" # Change package to zip
                 os.rename(".\\" + Dir, ".\\" + NewDir)
                 Match_list.append(NewDir)
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (str(Github_PkgVersion) in Dir) and (str(Dir).find(".zip") != -1):
+            if (str(ProcessProjectList[i]).lower() in Dir or str(ProcessProjectList[i]) in Dir) and str(Github_PkgVersion) in Dir and str(Dir).find(".zip") != -1:
                 Match_list.append(Dir)
+    return Match_list
+
+def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
+    Match_list = []
+    Github_PkgVersion = "FFFFFF"
+    logging.debug("ProcessProjectList:" + str(ProcessProjectList))
+    logging.debug("ProjectNameInfo:" + str(ProjectNameInfo))
+    # For New Github Fv format version, ex. u21pacman.0.26.0.26.nupkg
+    if len(NewVersion) >= 6:
+        Github_PkgVersion = "." + str(int(NewVersion[0:2])) + "." + str(int(NewVersion[2:4])) + "." + str(int(NewVersion[4:6])) # ex. .0.26.0
+
+    for Dir in os.listdir(".\\"):
+        for Project in ProcessProjectList:
+            Match_old = "Fv_" + Project + "_" + NewVersion # ex. Fv_S21_960300
+            Match_old = Match_old + "_" + NewBuildID if NewBuildID else Match_old # ex. Fv_S21_960300_0000
+            Match_new = Github_PkgVersion
+            logging.debug("Match_old:" + Match_old)
+            logging.debug("Match_new:" + Match_new)
+
+            # Old format match
+            if Match_old in Dir and (Dir.endswith(".zip") or Dir.endswith(".7z")):
+                Match_list.append(Dir)
+
+            # New format match and rename if necessary
+            if Match_new in Dir:
+                if Dir.endswith(".nupkg"):
+                    NewDir = str(os.path.splitext(Dir)[0]) + ".zip"
+                    logging.debug("Match_new:" + NewDir)
+                    os.rename(".\\" + Dir, ".\\" + NewDir)
+                    Dir = NewDir
+                if not Dir.startswith(Match_new):
+                    TempDir = Dir.split(".")
+                    TempDir[0] = Match_new
+                    TempDir = ".".join(TempDir)
+                    logging.debug("TempDir:" + TempDir)
+                    os.rename(".\\" + Dir, ".\\" + TempDir)
+                    Dir = TempDir
+                Match_list.append(Dir)
+
     return Match_list

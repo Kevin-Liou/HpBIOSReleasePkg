@@ -1,8 +1,9 @@
-import sys, os, logging
+import os
+import sys
+import logging
 from ftplib import FTP, error_perm
 from time import sleep
 from multiprocessing import Pool, Manager
-
 from ReleasePkgLib import *
 
 
