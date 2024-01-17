@@ -132,13 +132,13 @@ def GetMrcVersion(Match_folder_list):
 def GetMEVersion(Match_folder_list):
     logging.debug("Get ME Version Start.")
     Version = ""
-    Offset = 0x94
+    Offset = 0x64
     FindData = b'RBEP.man'
     UnpackDataSize = '<4H'
     DataSize = 8
     Version = GetBinaryData(Match_folder_list, FindData, Offset, DataSize, UnpackDataSize)
     if Version == "":
-        logging.debug("Get ISH Version fail.")
+        logging.debug("Get ME Version fail.")
     return (Version)
 
 
