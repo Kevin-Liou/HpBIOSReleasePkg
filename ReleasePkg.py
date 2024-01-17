@@ -303,8 +303,7 @@ if __name__ == '__main__':
         #======For Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
             (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
-            (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-            (Platform_Flag(NProc) == "Intel G10"):
+            (Platform_Flag(NProc) == "Intel G8"):
             Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
                 ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and (".docx" in ReleaseNote)]
@@ -337,6 +336,27 @@ if __name__ == '__main__':
                             print("ReleaseNote Rename to " + ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
                     print("Can't find release note file.")
+                    print("ReleaseNote_xlsm" + str(ReleaseNote_xlsm))
+                os.chdir(Path + "\\FPTW")
+                ChangeBuildID(NProc, Version_file_list, NewVersion)
+            else:
+                print("Pkg Folder " + ("_").join(NProc) + " can't find.\n")
+            os.chdir("..\..")
+        #=======for 2.0 Release Note
+        if (Platform_Flag(NProc) == "Intel G9"):
+            Path = os.getcwd() + "\\" + ("_").join(NProc)
+            if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
+                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
+                print("\n"+ "Please choose which release note you want to modify\n")
+                print("1."+ReleaseNote_xlsm[0])
+                print("2."+ReleaseNote_xlsm[1])
+                ReleaseNoteName=ReleaseNote_xlsm[(int(input("")))-1]
+                if len(ReleaseNote_xlsm) != 0: # If get release note G5 and late
+                    os.chdir(Path)
+                    ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
+                else:
+                    print("Can't find release note file.")
+                    print("ReleaseNote_xlsm" + str(ReleaseNote_xlsm))
                 os.chdir(Path + "\\FPTW")
                 ChangeBuildID(NProc, Version_file_list, NewVersion)
             else:
