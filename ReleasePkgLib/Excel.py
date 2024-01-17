@@ -709,7 +709,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 for a in range(10, 35):
                     if PlatformHowToFlash.range('A'+str(a)).value == "BIOS Flash: From -> To ":
                         PlatformHowToFlash.range(str(a+2)+":"+str(a+2)).api.Insert()
-                        CopyValues = PlatformHowToFlash.range('A'+str(a+1)+':K'+str(a+1)).options(ndim = 2).value
+                        CopyValues = PlatformHowToFlash.range('A'+str(a+1)+':M'+str(a+1)).options(ndim = 2).value
                         PlatformHowToFlash.range('A'+str(a+2)+':K'+str(a+2)).expand('table').value = CopyValues[0]
                         pattern = r'\d\d.\d\d.\d\d.*'
                         if ("->") not in str(PlatformHowToFlash.range('A'+str(a+1)).value):

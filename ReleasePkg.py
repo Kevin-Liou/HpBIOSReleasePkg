@@ -349,7 +349,7 @@ if __name__ == '__main__':
                 ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
                 print("\n"+ "Please choose which release note you want to modify\n")
                 print("1."+ReleaseNote_xlsm[0])
-                print("2."+ReleaseNote_xlsm[1])
+                print("2."+ReleaseNote_xlsm[1]+"\n")
                 ReleaseNoteName=ReleaseNote_xlsm[(int(input("")))-1]
                 if len(ReleaseNote_xlsm) != 0: # If get release note G5 and late
                     os.chdir(Path)
