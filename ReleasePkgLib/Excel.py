@@ -37,7 +37,7 @@ def CheckBiosBuildDate(Match_folder_list):
 def ModifyExcelData(Sheet, Modify_Data , Version):
     if not any(c.isdigit() or c.isnumeric() for c in Version):
         return
-    Sheet_range = 'A1:A100'
+    Sheet_range = 'A1:A200'
     if Modify_Data == 'VERSION':
         logging.debug('VERSION')
         count = 0
@@ -76,6 +76,8 @@ def ModifyExcelData(Sheet, Modify_Data , Version):
                     cell.offset(0, 1).value = "" + str(Version)
                     if old_version != cell.offset(0, 1).value:
                         cell.offset(0, 1).api.Font.Color = 0x00B050
+                    if Modify_Data !='System BIOS':
+                       return
 
 
 def FindOldMEVersion(Sheet):
@@ -621,7 +623,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     "v2.00.01" in wb.sheets['Revision'].range('A8').value:
         logging.debug("Platform_Flag="+ str(Platform_Flag(NProc)))
         try:
-            #======If Intel DM G5 and late
+            #======If Intel G9 and late
             if (Platform_Flag(NProc) == "Intel G9"):
                 logging.debug('If Intel G9 late')
                 MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
@@ -639,9 +641,9 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 #======Marco work
                 logging.debug('Marco work')
                 PlatformHistory.range('C:C').api.Insert(constants.InsertShiftDirection.xlShiftToRight) # Can't Protection worksheet
-                CopyValues = PlatformHistory.range('B9:B100').options(ndim=2).value
-                PlatformHistory.range('C9:C100').value = CopyValues
-                PlatformHistory.range('C9:C100').api.Font.Color = 0x000000
+                CopyValues = PlatformHistory.range('B9:B200').options(ndim=2).value
+                PlatformHistory.range('C9:C200').value = CopyValues
+                PlatformHistory.range('C9:C200').api.Font.Color = 0x000000
                 logging.debug('Init finish.')
                 #======Modify 'System BIOS Version' 'Build Date' 'CHECKSUM'
                 logging.debug('Modify ,System BIOS ,Version ,Build Date ,CHECKSUM')
@@ -663,8 +665,8 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 ModifyExcelData(PlatformHistory,'ISH FW version',"HpSigned_ishC_" + BiosIshVersion) #ISH
                 ModifyExcelData(PlatformHistory,'PMC',BiosPmcVersion) #PMC
                 ModifyExcelData(PlatformHistory,'NPHY FW  version',BiosNphyVersion) #NPHY
-                ModifyExcelData(PlatformHistory,'System BIOS',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" +".00") #System BIOS
-                ModifyExcelData(PlatformHistory,'HP System Firmware',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" +".00") #HP System Firmware
+                ModifyExcelData(PlatformHistory,'System BIOS',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + ".00") #System BIOS
+                ModifyExcelData(PlatformHistory,'HP System Firmware',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] +".00") #HP System Firmware
                 ModifyExcelData(ComponentInfo,'PART NUMBER',"BIOS P00000-000") #BIOS PART NUMBER
                 ModifyExcelData(ComponentInfo,'ID',"BIOS 000000") #BIOS PART NUMBER ID
                 check = "pass"
