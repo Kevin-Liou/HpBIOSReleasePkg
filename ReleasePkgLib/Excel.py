@@ -73,8 +73,11 @@ def ModifyExcelData(Sheet, Modify_Data , Version):
                 if cell.value == Modify_Data:
                     logging.debug(cell.address + ' = '+ Modify_Data)
                     old_version = str(cell.offset(0, 1).value)
+                    if Version in old_version:
+                        logging.debug("The Version didn't need to update")
+                        return
                     cell.offset(0, 1).value = "" + str(Version)
-                    if old_version != cell.offset(0, 1).value:
+                    if old_version != cell.offset(0, 1).value :
                         cell.offset(0, 1).api.Font.Color = 0x00B050
                     if Modify_Data !='System BIOS':
                        return
