@@ -4,7 +4,7 @@ from multiprocessing import freeze_support
 from colorama import init
 
 
-from .Lib import MatchMultipleFolder, ChangeBuildID, RemoveOldFileInDir, Copy_Release_Folder, New_FvFolder_Move_File, Copy_Release_Files, Copy_Release_Files_AMD, FindFvFolder, FindFvZip
+from .Lib import MatchMultipleFolder, ChangeBuildID, RemoveOldFileInDir, Copy_Release_Folder, Copy_Release_Files, Copy_Release_Files_AMD, FindFvFolder, FindFvZip
 from .InputStr import InputStr
 from .Zip import UnZip, PrintZipAllInfo, GetZipDateInfo
 from .Ftp import Ftp_multi, Ftp_download, Ftp_download_Test, Ftp_connect, Ftp_get_file_list, Ftp_get_filename, Ftp_callback

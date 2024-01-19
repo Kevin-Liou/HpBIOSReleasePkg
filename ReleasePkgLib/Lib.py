@@ -14,27 +14,36 @@ from .Excel import CheckMEVersion
 
 
 # Working with multiple folders.
+# Function to handle file organization across multiple folders.
 def MatchMultipleFolder(Match_folder_list):
     print("Check is multiple folder?")
+    # Iterate over each folder in the provided folder list.
     for Fv in Match_folder_list:
+        # Walk through the directory structure starting from the current folder.
         for root, dirs, files in os.walk(".\\" + Fv):
+            # Iterate over each file in the directories.
             for file in files:
+                # Check if the file is 'AutoGenFlashMap.h'.
                 if file == "AutoGenFlashMap.h":
+                    # If the file is in the expected directory, no action is needed.
                     if (root + "\\" + file) == (".\\" + Fv + "\\" + "AutoGenFlashMap.h"):
                         print("No, not need move.")
                         return
                     else:
+                        # If the file is not in the expected directory, it needs to be moved.
                         print("Yes, need move.")
+                        # Move all directories and files from the current root to the target directory.
                         for folder in dirs:
                             move(root + "\\" + folder, ".\\" + Fv + "\\")
                         for file in files:
                             move(root + "\\" + file, ".\\" + Fv + "\\")
+                        # Check if 'AutoGenFlashMap.h' is now in the correct location.
                         if os.path.exists(".\\" + Fv + "\\" + "AutoGenFlashMap.h"):
                             return
                         else:
+                            # If the file is still not found in the target location, print an error message and exit the program.
                             print("Can't find AutoGenFlashMap.h in Fv folder, Please check Fv folder.")
                             sys.exit()
-
 
 # Modify Update Version message in file.
 def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
@@ -100,16 +109,16 @@ def Copy_Release_Folder(sourcePath, targetPath):
 
 # Not use now.
 # If Fv folder is new folder.
-def New_FvFolder_Move_File(Fv_Path):
-    if os.path.isdir(Fv_Path + "\\Combined\\WU") and os.path.isfile(Fv_Path + "\\Combined\\WU\\fwu.pvk"):
-        for root, dirs, files in os.walk(Fv_Path + "\\Combined\\WU"):
-            for name in files:# Move "WU" file.
-                if os.path.isfile(Fv_Path + "\\Combined\\WU\\" + name):
-                    print("move " + Fv_Path + "\\Combined\\WU\\" + name + " to " + Fv_Path + "\\Combined")
-                    move(Fv_Path + "\\Combined\\WU\\" + name, Fv_Path + "\\Combined")
-                elif os.path.isfile(Fv_Path + "Combined\\WU\\" + name):
-                    print("move " + Fv_Path + "Combined\\WU\\" + name + " to " + Fv_Path + "\\Combined")
-                    move(Fv_Path + "Combined\\WU\\" + name, Fv_Path + "\\Combined")
+# def New_FvFolder_Move_File(Fv_Path):
+#     if os.path.isdir(Fv_Path + "\\Combined\\WU") and os.path.isfile(Fv_Path + "\\Combined\\WU\\fwu.pvk"):
+#         for root, dirs, files in os.walk(Fv_Path + "\\Combined\\WU"):
+#             for name in files:# Move "WU" file.
+#                 if os.path.isfile(Fv_Path + "\\Combined\\WU\\" + name):
+#                     print("move " + Fv_Path + "\\Combined\\WU\\" + name + " to " + Fv_Path + "\\Combined")
+#                     move(Fv_Path + "\\Combined\\WU\\" + name, Fv_Path + "\\Combined")
+#                 elif os.path.isfile(Fv_Path + "Combined\\WU\\" + name):
+#                     print("move " + Fv_Path + "Combined\\WU\\" + name + " to " + Fv_Path + "\\Combined")
+#                     move(Fv_Path + "Combined\\WU\\" + name, Fv_Path + "\\Combined")
 
 
 # Copy Fv folder file to NewPkg.
@@ -137,6 +146,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             if file.find("submission") != -1 or file.find("Submission") != -1:
                 move(file, target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
                 print("move " + file + " to " + target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
+
         # Copy FUR and WU files.
         if os.path.isdir(source_fullpath + "\\Combined\\FUR") and os.path.isdir(source_fullpath + "\\Combined\\WU"):
             for root,dirs,files in os.walk(source_fullpath + "\\Combined\\FUR"):
@@ -148,12 +158,14 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                 for name in files:
                     copy(root + "\\" + name, target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
                     print(root + "\\" + name + " to " + targetFolder + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)" + " Copy succeeded.")
+
         # If Linux folder exist, copy files.
         if os.path.isdir(source_fullpath+"\\Combined\\Linux"):
             for root,dirs,files in os.walk(source_fullpath+"\\Combined\\Linux"):
                 for name in files:
                     copy(root + "\\" + name, target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
                     print(root + "\\" + name + " to " + targetFolder + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)" + " Copy succeeded.")
+
         # If TBT FW exist, copy it, for Intel G5 and late if support TBT use.
         TBT_path = ""
         TBT_Version = ""
@@ -187,6 +199,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                         os.rename(target_fullpath + "\\Capsule\\Windows\\Thunderbolt\\" + file, target_fullpath + "\\Capsule\\Windows\\Thunderbolt\\" + TBT_Version + ".inf")
             if os.path.exists(target_fullpath + "\\Capsule\\TBT"):
                 rmtree(target_fullpath + "\\Capsule\\TBT")
+
         # ME binary copy to METools\FWUpdate\HPSignME for Intel G5 and late.
         MEbinary_pattern = r"ME_+[0-9]+[\.]+[0-9]+[\.]+[0-9]+[\.]+[0-9]+.bin"
         if not os.path.exists(target_fullpath + "\\METools\\FWUpdate\\HPSignME"): # Copy sign ME file
@@ -215,9 +228,12 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             copy(source_fullpath + "\\ME\\" + ME_filename, target_fullpath + "\\METools\\FWUpdate\\HPSignME")
             print(root + "\\" + ME_filename + "(Sign) to " + targetFolder + "\\METools\\FWUpdate\\HPSignME" + " Copy succeeded.")
         if os.path.isfile(source_fullpath + "\\ME\\ME_0101.bin"):# Copy unsign ME file
+            if os.path.isfile(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin"):
+                os.remove(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin")
             copy(source_fullpath + "\\ME\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW")
             os.rename(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin")
             print(sourceFolder + "\\ME\\" + ME_Version + "(UnSign) to " + targetFolder + "\\METools\\FWUpdate\\MEFW" + " Copy succeeded.")
+
     #=======For G4 other Fv
     if (Platform_Flag(targetFolder) == "Intel G4"):
         if os.path.isfile(source_fullpath + "\\Combined\\fwu.pfx"):
@@ -228,6 +244,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                         print(root + "\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
                     copy(root + "\\" + name, target_fullpath  + "\\Capsule")
                     print(root + "\\" + name + " to " + targetFolder + "\\Capsule" + " Copy succeeded.")
+
     #======For G3 FV
     if Platform_Flag(targetFolder) == "Intel G3":
         if os.path.isfile(source_fullpath + "\\fwu.pfx"):
@@ -246,6 +263,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                     if name.find(".cer") != -1 or name.find(".pfx") != -1 or name.find(".pvk") != -1 or name.find(".cat" ) != -1 or name.find(".inf") != -1:
                         copy(root + "\\" + name, target_fullpath + "\\Capsule Update")
                         print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Capsule Update" + " Copy succeeded.")
+
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):
         if name.find("_12.bin") != -1 or name.find("_16.bin") != -1 or name.find("_32.bin") != -1:
