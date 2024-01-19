@@ -221,34 +221,49 @@ if __name__ == '__main__':
     Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
 
     # Find Fv Zip file Start extracting
-    if len(Match_zip_list) != -1 and len(Match_folder_list) == 0:
+    if Match_zip_list and not Match_folder_list:
         print("\nFind Fv Zip File, Start Extracting.")
-        for i in range(len(Match_zip_list)):
-            Foldername = Match_zip_list[i].replace(".zip", "")
-            # For git hub package file
-            if (str(Match_zip_list[i]).find(str(ProjectNameInfo[i].lower())) != -1) and (str(Match_zip_list[i]).find("Fv_") == -1) \
-                and not os.path.isdir(".\\" + Foldername):
-                UnZip(Match_zip_list[i])
-                os.rename(".\\" + Foldername + "\\Fv", ".\\" + Foldername + "\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32")
-                if not os.path.isdir(".\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32"):
-                    move(".\\" + Foldername + "\\Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32", ".\\")
-                rmtree(Foldername)
-                # os.remove(".\\" + Match_zip_list[i]) #remove zip file
-                print(Match_zip_list[i] + " Extract succeeded.")
-                Match_folder_list.append("Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_32")
-            # For normal package file
-            elif (str(Match_zip_list[i]).find("Fv_") != -1) and not os.path.isdir(".\\" + Foldername):
-                UnZip(Match_zip_list[i])
-                move(".\\" + Match_zip_list[i], ".\\" + Foldername)
-                print(Match_zip_list[i] + " Extract succeeded.")
-                Match_folder_list.append(Foldername)
-            elif os.path.isdir(".\\" + Foldername):
-                print("Fv folder " + Foldername + " already exists, Remove Fv zip file.")
-                if os.path.isfile(".\\" + Match_zip_list[i]):
-                    os.remove(".\\" + Match_zip_list[i])
-        print("\nNow Your Fv Folder: %s" % str(str(Match_folder_list)))
+        for i, zip_file in enumerate(Match_zip_list):
+            Foldername = zip_file.replace(".zip", "")
+
+            # Determine if the file needs to be processed
+            is_github_package = (ProjectNameInfo[i].lower() in zip_file) and ("Fv_" not in zip_file)
+            is_normal_package = "Fv_" in zip_file
+            logging.debug(f'is_github_package: {is_github_package}, is_normal_package: {is_normal_package}')
+
+            # Skip if directory already exists
+            if os.path.isdir(".\\" + Foldername):
+                print(f"Fv folder {Foldername} already exists.")
+                #if os.path.isfile(".\\" + zip_file):
+                #    os.remove(".\\" + zip_file)
+                continue
+
+            try:
+                UnZip(zip_file)
+
+                # For GitHub package file
+                if is_github_package:
+                    new_folder_name = f"Fv_{ProcessProjectList[i]}_{NewVersion}_32"
+                    os.rename(f".\\{Foldername}\\Fv", f".\\{Foldername}\\{new_folder_name}")
+                    if not os.path.isdir(f".\\{new_folder_name}"):
+                        move(f".\\{Foldername}\\{new_folder_name}", ".\\")
+                    rmtree(Foldername)
+                    # os.remove(f".\\{zip_file}") # Remove zip file
+                    Match_folder_list.append(new_folder_name)
+
+                # For normal package file
+                elif is_normal_package:
+                    # move(f".\\{zip_file}", f".\\{Foldername}") # Move zip file
+                    Match_folder_list.append(Foldername)
+
+                print(f"{zip_file} Extract succeeded.")
+
+            except Exception as e:
+                print(f"Error processing {zip_file}: {e}")
+
+        print(f"\nNow Your Fv Folder: {Match_folder_list}")
     else:
-        print("\nNow Your Fv Folder: %s" % str(Match_folder_list))
+        print(f"\nNow Your Fv Folder: {Match_folder_list}")
 
     # Working with multiple folders
     MatchMultipleFolder(Match_folder_list)
@@ -348,10 +363,14 @@ if __name__ == '__main__':
             Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
                 ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
-                print("\n"+ "Please choose which release note you want to modify\n")
-                print("1."+ReleaseNote_xlsm[0])
-                print("2."+ReleaseNote_xlsm[1]+"\n")
-                ReleaseNoteName=ReleaseNote_xlsm[(int(input("")))-1]
+                if len(ReleaseNote_xlsm) > 1:
+                    print("\n" + "Please choose which release note you want to modify\n")
+                    print("1." + ReleaseNote_xlsm[0])
+                    print("2." + ReleaseNote_xlsm[1] + "\n")
+                    ReleaseNoteName = ReleaseNote_xlsm[(int(input(""))) - 1]
+                else:
+                    ReleaseNoteName = ReleaseNote_xlsm[0]
+
                 if len(ReleaseNote_xlsm) != 0: # If get release note G5 and late
                     os.chdir(Path)
                     ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)

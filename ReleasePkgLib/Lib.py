@@ -366,32 +366,38 @@ def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
 def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
     Match_list = []
     Github_PkgVersion = "FFFFFF"
-    for i in range(len(ProcessProjectList)):
+
+    #======For New Github Fv
+    if len(NewVersion) >= 6:
+        Github_PkgVersion = f".{int(NewVersion[0:2])}.{int(NewVersion[2:4])}.{int(NewVersion[4:6])}"
+
+    for i, project in enumerate(ProcessProjectList):
+        # Construct matching strings based on old and new versions
+        Match = f"Fv_{project}_{NewVersion}_{NewBuildID}" if NewBuildID else f"Fv_{project}_{NewVersion}_"
+
         for Dir in os.listdir(".\\"):
-            #======For Old Fv
-            Match = "Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_"
-            if not NewBuildID == "":
-                Match = "Fv_" + ProcessProjectList[i] + "_" + NewVersion + "_" + NewBuildID
-            if Match in Dir:
-                if (str(Dir).find(".zip") != -1) or (str(Dir).find(".7z") != -1):
-                    Match_list.append(Dir)
-            #======For New Github Fv
-            if len(NewVersion) >= 6:
-                Github_PkgVersion = "." + str(int(NewVersion[0:2])) + "." + str(int(NewVersion[2:4])) + "." + str(int(NewVersion[4:6]))
-                # GithubMatch = str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower() + Github_PkgVersion
-            #======For U23 Github Fv project name mistake rename
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (Github_PkgVersion in Dir):
-                TempDir = Dir.split(".")
-                if TempDir[0] != str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower():
-                    TempDir[0] = str(ProcessProjectList[i]).lower() + str(ProjectNameInfo[i]).lower()
-                    TempDir = ".".join(TempDir)
-                    os.rename(".\\" + Dir, ".\\" + TempDir)
-                    Dir = TempDir
-            #======Rename .nupkg to .zip
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (str(Github_PkgVersion) in Dir) and (str(Dir).find(".nupkg") != -1):
-                NewDir = str(os.path.splitext(Dir)[0]) + ".zip" # Change package to zip
-                os.rename(".\\" + Dir, ".\\" + NewDir)
-                Match_list.append(NewDir)
-            if ((str(ProcessProjectList[i]).lower() in Dir) or (str(ProcessProjectList[i]) in Dir)) and (str(Github_PkgVersion) in Dir) and (str(Dir).find(".zip") != -1):
+            # Check if it is an old version of Fv file
+            if Match in Dir and (Dir.endswith(".zip") or Dir.endswith(".7z")):
+                if Dir.endswith(".7z"):
+                    new_name = f"{os.path.splitext(Dir)[0]}.zip"
+                    os.rename(f".\\{Dir}", f".\\{new_name}")
+                    Dir = new_name
                 Match_list.append(Dir)
+
+            # Checking for Github Fv Files
+            if Github_PkgVersion in Dir and (project.lower() in Dir or project in Dir):
+                # For U23 Github Fv project name mistake rename
+                if not Dir.startswith(project.lower() + ProjectNameInfo[i].lower()):
+                    new_name = project.lower() + ProjectNameInfo[i].lower() + Dir[len(project):]
+                    os.rename(f".\\{Dir}", f".\\{new_name}")
+                    Dir = new_name
+
+                # Rename .nupkg and .7z to .zip
+                if Dir.endswith(".nupkg") or Dir.endswith(".7z"):
+                    new_name = f"{os.path.splitext(Dir)[0]}.zip"
+                    os.rename(f".\\{Dir}", f".\\{new_name}")
+                    Match_list.append(new_name)
+                elif Dir.endswith(".zip"):
+                    Match_list.append(Dir)
+
     return Match_list
