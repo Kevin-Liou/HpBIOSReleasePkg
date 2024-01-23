@@ -60,6 +60,7 @@ if __name__ == '__main__':
     ProcessProject = InputStr("                                   (Can Multiple Select)\
         \nPlease Enter Projects To Processed"+str(BoardID)+":")# Input need Process boardID, Can multiple choice
     ProcessProjectList = ProcessProject.upper().split() # ex:['U21', 'U23']
+    CheckBiosVersion(OldVersion, NewVersion, NewBuildID, ProcessProject) # Check Bios Version
     if ProcessProject == "":
         print("\nPlease Input Project.")
         sys.exit()

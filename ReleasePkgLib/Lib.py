@@ -6,11 +6,12 @@
 #=================================
 import sys, os, glob, logging
 from shutil import copy, copytree, move, rmtree
-from re import sub, search
+from re import sub, search, match, compile
 
 from ReleasePkgLib import *
 from .Platform import Platform_Flag
 from .Excel import CheckMEVersion
+
 
 
 # Working with multiple folders.
@@ -44,6 +45,32 @@ def MatchMultipleFolder(Match_folder_list):
                             # If the file is still not found in the target location, print an error message and exit the program.
                             print("Can't find AutoGenFlashMap.h in Fv folder, Please check Fv folder.")
                             sys.exit()
+
+
+# Check Bios Version.
+def CheckBiosVersion(OldVersion, NewVersion, NewBuildID, ProcessProject):
+    flag = True
+    version_pattern = compile(r'^\d{4}$|^\d{6}$')
+    if not match(version_pattern, OldVersion):
+        print(f"OldVersion {OldVersion} should be 4 or 6 digits.")
+        flag = False
+    if not match(version_pattern, NewVersion):
+        print(f"NewVersion {NewVersion} should be 4 or 6 digits.")
+        flag = False
+
+    build_id_pattern = compile(r'^\d{4}$|^$')
+    if not match(build_id_pattern, NewBuildID):
+        print(f"NewBuildID {NewBuildID} should be 4 digits or empty.")
+        flag = False
+
+    project_pattern = compile(r'^[a-zA-Z]\d{2}$')
+    if not match(project_pattern, ProcessProject):
+        print(f"ProcessProject {ProcessProject} should be 1 letter followed by 2 digits.")
+        flag = False
+
+    if flag == False:
+        sys.exit()
+
 
 # Modify Update Version message in file.
 def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
@@ -121,16 +148,39 @@ def Copy_Release_Folder(sourcePath, targetPath):
 #                     move(Fv_Path + "Combined\\WU\\" + name, Fv_Path + "\\Combined")
 
 
+# Modify ME version in WLAN_MCU files.
+def Modify_ME_WLAN_MCU_Files(path, ME_Version):
+    files_to_check = ['WLAN_MCU.bat', 'WLAN_MCU.nsh', 'WLAN_MCU64.bat']
+    pattern = compile(r'ME_\d+\.\d+\.\d+\.\d+\.bin')
+
+    for file_name in files_to_check:
+        file_path = os.path.join(path, file_name)
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                content = file.read()
+
+            new_content = pattern.sub(f'ME_{ME_Version}.bin', content)
+
+            if new_content != content:
+                with open(file_path, 'w') as file:
+                    file.write(new_content)
+                print(f"Updated {file_name} with ME version {ME_Version}")
+
+
 # Copy Fv folder file to NewPkg.
 def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
     source_fullpath = ".\\" + sourceFolder + "\\"
     target_fullpath = ".\\" + targetFolder + "\\"
+    logging.debug(f'source_fullpath: {source_fullpath}, target_fullpath: {target_fullpath}')
     # Combined copy to Capsule&HPFWUPDREC.
     #======For G5 and late Fv
     # Check Capsule folder format for G5 and late.
     if (Platform_Flag(targetFolder) == "Intel G5") or (Platform_Flag(targetFolder) == "Intel G6") or\
         (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or\
         (Platform_Flag(targetFolder) == "Intel G10"):
+        if not os.path.isdir(target_fullpath + "\\Capsule\\Linux"):
+            os.makedirs(target_fullpath + "\\Capsule\\Linux")
+            os.makedirs(target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
         if os.path.isdir(target_fullpath + "\\Capsule\\CCG5") and ((Platform_Flag(targetFolder) == "Intel G6") or \
             (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or \
             (Platform_Flag(targetFolder) == "Intel G10")):
@@ -139,9 +189,6 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             os.makedirs(target_fullpath + "\\Capsule\\Windows")
             os.makedirs(target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
             os.makedirs(target_fullpath + "\\Capsule\\Windows\\Thunderbolt")
-        if not os.path.isdir(target_fullpath + "\\Capsule\\Linux"):
-            os.makedirs(target_fullpath + "\\Capsule\\Linux")
-            os.makedirs(target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
         for file in glob.glob(target_fullpath + "\\Capsule\*.doc*"):
             if file.find("submission") != -1 or file.find("Submission") != -1:
                 move(file, target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
@@ -161,7 +208,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
 
         # If Linux folder exist, copy files.
         if os.path.isdir(source_fullpath+"\\Combined\\Linux"):
-            for root,dirs,files in os.walk(source_fullpath+"\\Combined\\Linux"):
+            for root,dirs,files in os.walk(source_fullpath + "\\Combined\\Linux"):
                 for name in files:
                     copy(root + "\\" + name, target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
                     print(root + "\\" + name + " to " + targetFolder + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)" + " Copy succeeded.")
@@ -199,6 +246,8 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                         os.rename(target_fullpath + "\\Capsule\\Windows\\Thunderbolt\\" + file, target_fullpath + "\\Capsule\\Windows\\Thunderbolt\\" + TBT_Version + ".inf")
             if os.path.exists(target_fullpath + "\\Capsule\\TBT"):
                 rmtree(target_fullpath + "\\Capsule\\TBT")
+        else:
+            print("Can't find TBT folder.")
 
         # ME binary copy to METools\FWUpdate\HPSignME for Intel G5 and late.
         MEbinary_pattern = r"ME_+[0-9]+[\.]+[0-9]+[\.]+[0-9]+[\.]+[0-9]+.bin"
@@ -208,7 +257,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
         ME_Bin_Check = "False"
         for root,dirs,files in os.walk(source_fullpath + "\\ME"):
             for name in files:
-                searchObj = search(MEbinary_pattern, name)
+                searchObj = search(MEbinary_pattern, name) # Search ME binary file
                 if (searchObj != None):
                     copy(root + "\\" + name, target_fullpath + "\\METools\\FWUpdate\\HPSignME")
                     print(root + "\\" + name + "(Sign) to " + targetFolder + "\\METools\\FWUpdate\\HPSignME" + " Copy succeeded.")
@@ -233,6 +282,10 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             copy(source_fullpath + "\\ME\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW")
             os.rename(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin")
             print(sourceFolder + "\\ME\\" + ME_Version + "(UnSign) to " + targetFolder + "\\METools\\FWUpdate\\MEFW" + " Copy succeeded.")
+            # Modify the contents of the WLAN_MCU files.
+            if os.path.isfile(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin"):
+                MEFW_path = target_fullpath + "\\METools\\FWUpdate\\MEFW\\"
+                Modify_ME_WLAN_MCU_Files(MEFW_path, ME_Version)
 
     #=======For G4 other Fv
     if (Platform_Flag(targetFolder) == "Intel G4"):
@@ -280,8 +333,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             if name.find(str(source_fullpath.split("_")[1])) != -1:
                 copy(source_fullpath + name, target_fullpath + "\\XML")
                 print(sourceFolder + "\\" + name + " to "+targetFolder + "\\XML" + " Copy succeeded.")
-        # For Smart flash copy *Pvt.bin.
-        if name.find("Pvt.bin") != -1:
+        if name.find("Pvt.bin") != -1: # For Smart flash copy *Pvt.bin.
             copy(source_fullpath + name, target_fullpath)
             print(sourceFolder + "\\" + name + " to " + targetFolder + " Copy succeeded.")
     print()
