@@ -221,15 +221,15 @@ if __name__ == '__main__':
 
     Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
 
-    # Find Fv Zip file Start extracting
+    # Find Fv Zip file and can't find Fv folder start extracting
     if Match_zip_list and not Match_folder_list:
         print("\nFind Fv Zip File, Start Extracting.")
         for i, zip_file in enumerate(Match_zip_list):
             Foldername = zip_file.replace(".zip", "")
 
             # Determine if the file needs to be processed
-            is_github_package = (ProjectNameInfo[i].lower() in zip_file) and ("Fv_" not in zip_file)
-            is_normal_package = "Fv_" in zip_file
+            is_github_package = ProjectNameInfo[i].lower() in zip_file.lower() and "fv_" not in zip_file.lower()
+            is_normal_package = "fv_" in zip_file.lower()
             logging.debug(f'is_github_package: {is_github_package}, is_normal_package: {is_normal_package}')
 
             # Skip if directory already exists
@@ -244,20 +244,20 @@ if __name__ == '__main__':
 
                 # For GitHub package file
                 if is_github_package:
-                    new_folder_name = f"Fv_{ProcessProjectList[i]}_{NewVersion}_32"
+                    new_folder_name = f"Fv_{ProcessProjectList[i]}_{NewVersion}_{NewBuildID if NewBuildID else '0000'}"
                     os.rename(f".\\{Foldername}\\Fv", f".\\{Foldername}\\{new_folder_name}")
                     if not os.path.isdir(f".\\{new_folder_name}"):
                         move(f".\\{Foldername}\\{new_folder_name}", ".\\")
                     rmtree(Foldername)
                     # os.remove(f".\\{zip_file}") # Remove zip file
                     Match_folder_list.append(new_folder_name)
+                    print(f"Github package {zip_file} Extract succeeded.")
 
                 # For normal package file
                 elif is_normal_package:
                     # move(f".\\{zip_file}", f".\\{Foldername}") # Move zip file
                     Match_folder_list.append(Foldername)
-
-                print(f"{zip_file} Extract succeeded.")
+                    print(f"Normal package {zip_file} Extract succeeded.")
 
             except Exception as e:
                 print(f"Error processing {zip_file}: {e}")
@@ -267,7 +267,7 @@ if __name__ == '__main__':
         print(f"\nNow Your Fv Folder: {Match_folder_list}")
 
     # Working with multiple folders
-    MatchMultipleFolder(Match_folder_list)
+    MatchMultipleFolder(Match_folder_list, ProcessProjectList, NewVersion)
 
     #=================Find New Pkg Or Add New Pkg=============================================
     print("Find New Pkg Or Add New Pkg".center(90, "="))

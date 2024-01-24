@@ -13,37 +13,75 @@ from .Platform import Platform_Flag
 from .Excel import CheckMEVersion
 
 
-
 # Working with multiple folders.
 # Function to handle file organization across multiple folders.
-def MatchMultipleFolder(Match_folder_list):
-    print("Check is multiple folder?")
+def MatchMultipleFolder(Match_folder_list, ProcessProjectList, NewVersion):
+    print("Check if the folder is multi-layered?")
+    TestSignVersion = "84" + NewVersion[-4:] # Test sign binary.
     # Iterate over each folder in the provided folder list.
-    for Fv in Match_folder_list:
+    for i, Fv_folder in enumerate(Match_folder_list):
         # Walk through the directory structure starting from the current folder.
-        for root, dirs, files in os.walk(".\\" + Fv):
+        for root, dirs, files in os.walk(".\\" + Fv_folder):
             # Iterate over each file in the directories.
             for file in files:
-                # Check if the file is 'AutoGenFlashMap.h'.
-                if file == "AutoGenFlashMap.h":
+                # Check if the file is binary file. ex: U21_000000_32.bin
+                expected_file = f"{ProcessProjectList[i]}_{NewVersion}_32.bin"
+                test_sign_file = f"{ProcessProjectList[i]}_{TestSignVersion}_32.bin"
+                current_path = os.path.join(root, file)
+                #logging.debug(f'expected_file: {expected_file}, test_sign_file: {test_sign_file}')
+
+                # For Production sign binary.
+                if file == expected_file:
+                    expected_path = os.path.join(".\\", Fv_folder, expected_file)
+
                     # If the file is in the expected directory, no action is needed.
-                    if (root + "\\" + file) == (".\\" + Fv + "\\" + "AutoGenFlashMap.h"):
-                        print("No, not need move.")
-                        return
+                    if current_path == expected_path:
+                        print("No, not need move files.")
+                        continue
                     else:
                         # If the file is not in the expected directory, it needs to be moved.
-                        print("Yes, need move.")
+                        print("Yes, need move files.")
                         # Move all directories and files from the current root to the target directory.
+                        target_dir = os.path.join(".\\", Fv_folder)
                         for folder in dirs:
-                            move(root + "\\" + folder, ".\\" + Fv + "\\")
+                            move(os.path.join(root, folder), target_dir)
                         for file in files:
-                            move(root + "\\" + file, ".\\" + Fv + "\\")
-                        # Check if 'AutoGenFlashMap.h' is now in the correct location.
-                        if os.path.exists(".\\" + Fv + "\\" + "AutoGenFlashMap.h"):
-                            return
+                            move(os.path.join(root, file), target_dir)
+
+                        # Check if binary file is now in the correct location.
+                        if os.path.exists(expected_path):
+                            # Delete the empty source directory if it's different from the target directory
+                            if os.path.normpath(root) != os.path.normpath(target_dir):
+                                rmtree(root)
+                            continue
                         else:
                             # If the file is still not found in the target location, print an error message and exit the program.
-                            print("Can't find AutoGenFlashMap.h in Fv folder, Please check Fv folder.")
+                            print(f"Can't find {expected_file} in {Fv_folder} folder, Please check Fv folder.")
+                            sys.exit()
+
+                # For Test sign binary.
+                if file == test_sign_file:
+                    expected_path = os.path.join(".\\", Fv_folder, test_sign_file)
+
+                    # If the file is in the expected directory, no action is needed.
+                    if current_path == expected_path:
+                        print("No, not need move files (Test sign binary).")
+                        continue
+                    else:
+                        # If the file is not in the expected directory, it needs to be moved.
+                        print("Yes, need move files (Test sign binary).")
+                        # Move test sign binary file from the current root to the target directory.
+                        target_dir = os.path.join(".\\", Fv_folder)
+                        move(current_path, target_dir)
+
+                        # Check if binary file is now in the correct location.
+                        if os.path.exists(expected_path):
+                            # Delete the empty source directory if it's different from the target directory
+                            rmtree(root)
+                            continue
+                        else:
+                            # If the file is still not found in the target location, print an error message and exit the program.
+                            print(f"Can't find {test_sign_file} in {Fv_folder} folder, Please check Fv folder.")
                             sys.exit()
 
 
@@ -319,24 +357,32 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
 
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):
-        if name.find("_12.bin") != -1 or name.find("_16.bin") != -1 or name.find("_32.bin") != -1:
-            copy(source_fullpath + name, target_fullpath + "\\FPTW")
-            print(sourceFolder + "\\" + name + " to " + targetFolder + "\\FPTW" + " Copy succeeded.")
-        if name.find("_12.bin") != -1:# If 16MB BIOS case please add it.
-            name = name.split("_12.bin")[0] + "_16.bin"
-            copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
-            print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.")
-        elif name.find("_32.bin") != -1:
-            copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
-            print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.")
-        if name.find(".xml") != -1:# Copy to XML
-            if name.find(str(source_fullpath.split("_")[1])) != -1:
-                copy(source_fullpath + name, target_fullpath + "\\XML")
-                print(sourceFolder + "\\" + name + " to "+targetFolder + "\\XML" + " Copy succeeded.")
-        if name.find("Pvt.bin") != -1: # For Smart flash copy *Pvt.bin.
-            copy(source_fullpath + name, target_fullpath)
-            print(sourceFolder + "\\" + name + " to " + targetFolder + " Copy succeeded.")
-    print()
+        source_file = os.path.join(source_fullpath, name)
+        target_dir = ""
+
+        # Determine the target directory based on file name
+        if "_84" not in name:
+            if "_32.bin" in name or "_12.bin" in name or "_16.bin" in name:
+                target_dir = os.path.join(target_fullpath, "FPTW")
+
+            if "_12.bin" in name or "_32.bin" in name: # If 16MB BIOS case please add it.
+                target_dir = os.path.join(target_fullpath, "Global", "BIOS")
+
+            if ".xml" in name and str(source_fullpath.split("_")[1]) in name: # Copy to XML
+                target_dir = os.path.join(target_fullpath, "XML")
+
+            if "Pvt.bin" in name: # For Smart flash copy *Pvt.bin.
+                target_dir = target_fullpath
+
+        elif "_84" in name and "_32.bin" in name and os.path.exists(os.path.join(target_fullpath, "TestSign")): # For test sign binary.
+            target_dir = os.path.join(target_fullpath, "TestSign")
+
+        # Copy the file if a target directory was determined
+        if target_dir:
+            copy(source_file, target_dir)
+            print(f"{source_file} to {target_dir} Copy succeeded.")
+
+    print("Copy process completed.\n")
 
 
 # Copy Fv folder file to NewPkg.(For AMD)
@@ -403,14 +449,22 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
 # Find Fv Folder, Add to Match_list
 def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
     Match_list = []
-    for Process in ProcessProjectList:
+    if len(NewVersion) >= 6:
+        Github_PkgVersion = f".{int(NewVersion[0:2])}.{int(NewVersion[2:4])}.{int(NewVersion[4:6])}"
+
+    for i, Process in enumerate(ProcessProjectList):
         for Dir in os.listdir(".\\"):
-            Match = "Fv_" + Process + "_" + NewVersion + "_"
-            if not NewBuildID == "":
-                Match = "Fv_" + Process + "_" + NewVersion + "_" + NewBuildID
-            if Match in Dir:
-                if not str(Dir).find(".zip") != -1 and not str(Dir).find(".7z") != -1:
-                    Match_list.append(Dir)
+            Match = f"Fv_{Process}_{NewVersion}_".lower()
+            if NewBuildID:
+                Match += NewBuildID.lower()
+            Dir_lower = Dir.lower()
+
+            if Match in Dir_lower and not (".zip" in Dir_lower or ".7z" in Dir_lower):
+                Match_list.append(Dir)
+
+            elif Github_PkgVersion in Dir_lower and not ("fv_" in Dir_lower or ".zip" in Dir_lower or ".7z" in Dir_lower):
+                Match_list.append(Dir)
+
     return Match_list
 
 
@@ -425,31 +479,32 @@ def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
 
     for i, project in enumerate(ProcessProjectList):
         # Construct matching strings based on old and new versions
-        Match = f"Fv_{project}_{NewVersion}_{NewBuildID}" if NewBuildID else f"Fv_{project}_{NewVersion}_"
+        Match = f"Fv_{project}_{NewVersion}_{NewBuildID}".lower() if NewBuildID else f"Fv_{project}_{NewVersion}_".lower()
 
         for Dir in os.listdir(".\\"):
+            Dir_lower = Dir.lower()
             # Check if it is an old version of Fv file
-            if Match in Dir and (Dir.endswith(".zip") or Dir.endswith(".7z")):
-                if Dir.endswith(".7z"):
+            if Match in Dir_lower and (Dir_lower.endswith(".zip") or Dir_lower.endswith(".7z")):
+                if Dir_lower.endswith(".7z"):
                     new_name = f"{os.path.splitext(Dir)[0]}.zip"
                     os.rename(f".\\{Dir}", f".\\{new_name}")
                     Dir = new_name
                 Match_list.append(Dir)
 
             # Checking for Github Fv Files
-            if Github_PkgVersion in Dir and (project.lower() in Dir or project in Dir):
+            if Github_PkgVersion in Dir_lower and (project.lower() in Dir_lower or project in Dir_lower):
                 # For U23 Github Fv project name mistake rename
-                if not Dir.startswith(project.lower() + ProjectNameInfo[i].lower()):
+                if not Dir_lower.startswith(project.lower() + ProjectNameInfo[i].lower()):
                     new_name = project.lower() + ProjectNameInfo[i].lower() + Dir[len(project):]
                     os.rename(f".\\{Dir}", f".\\{new_name}")
                     Dir = new_name
 
                 # Rename .nupkg and .7z to .zip
-                if Dir.endswith(".nupkg") or Dir.endswith(".7z"):
+                if Dir_lower.endswith(".nupkg") or Dir_lower.endswith(".7z"):
                     new_name = f"{os.path.splitext(Dir)[0]}.zip"
                     os.rename(f".\\{Dir}", f".\\{new_name}")
                     Match_list.append(new_name)
-                elif Dir.endswith(".zip"):
+                elif Dir_lower.endswith(".zip"):
                     Match_list.append(Dir)
 
     return Match_list
