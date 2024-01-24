@@ -20,7 +20,7 @@ ProjectName={"Q26":"ScottyRr", "Q27":"Scotty", "R24":"Worf", "R26":"Riker", "S25
 Version_file_list=["BUFF2.nsh", "Buff2All.nsh", "Update32.bat", "Update64.bat", "UpdateEFI.nsh",
                 "Update32_vPro.bat", "Update64_vPro.bat", "UpdateEFI_vPro.nsh"]
 
-Not_Remove_file_rule=["Note", "note", "History", "How to Flash", "AMT_CFG", "logo", "sign.bin", "HPSignME", "Batch"] # Priority over "Remove_file_rule"
+Not_Remove_file_rule=["Note", "note", "History", "How to Flash", "AMT_CFG", "logo", "sign.bin", "HPSignME", "Batch", "PD_FW"] # Priority over "Remove_file_rule"
 
 Remove_file_rule=["DCI..+", ".cer", ".pfx", ".pvk", ".xlsm", ".log", r"Pvt.bin", r"metainfo.xml", r"Build.Log",
                 r"\d\d_\d\d_\d\d.bin", r"\d\d_\d\d_\d\d.cat", r"\d\d_\d\d_\d\d.inf",
@@ -318,7 +318,11 @@ if __name__ == '__main__':
             Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
                 ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and (".docx" in ReleaseNote)]
-                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
+                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path)
+                                    if  ("Release" in ReleaseNote)
+                                    and ("Note" in ReleaseNote)
+                                    and ReleaseNote.endswith(".xlsm")
+                                    and not ReleaseNote.startswith("~$")]
                 if len(ReleaseNote_docx) == 1: # If get release note G4
                     os.chdir(Path)
                     os.rename(ReleaseNote_docx[0], ("_").join(NProc) + " release note.docx")
@@ -362,7 +366,7 @@ if __name__ == '__main__':
                     print("\n" + "Please choose which release note you want to modify\n")
                     print("1." + ReleaseNote_xlsm[0])
                     print("2." + ReleaseNote_xlsm[1] + "\n")
-                    ReleaseNoteName = ReleaseNote_xlsm[(int(input(""))) - 1]
+                    ReleaseNoteName = ReleaseNote_xlsm[(int(input("Please enter the number:"))) - 1]
                 else:
                     ReleaseNoteName = ReleaseNote_xlsm[0]
 

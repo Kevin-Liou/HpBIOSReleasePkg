@@ -5,7 +5,7 @@
 # Contact: Kevin.Liou@quantatw.com
 #=================================
 import sys, os, glob, logging
-from shutil import copy, copytree, move, rmtree
+from shutil import copy, copytree, move, rmtree, ignore_patterns, copy2
 from re import sub, search, match, compile
 
 from ReleasePkgLib import *
@@ -172,8 +172,23 @@ def RemoveOldFileInDir(target_dir, RemoveRule, NotRemoveRule):
 
 # Copy old version folder to new version folder.
 def Copy_Release_Folder(sourcePath, targetPath):
-    print("Start Copy "+sourcePath.split("\\")[-1] + " to "+targetPath.split("\\")[-1] + ", Please wait.....")
-    copytree(sourcePath, targetPath)# Copy to new Pkg
+    print("Start Copy " + sourcePath.split("\\")[-1] + " to " + targetPath.split("\\")[-1] + ", Please wait.....")
+
+    if not os.path.exists(targetPath):
+        os.makedirs(targetPath)
+
+    # Copy to new Pkg
+    for item in os.listdir(sourcePath):
+        logging.debug(f'Copy item: {item}')
+        s = os.path.join(sourcePath, item)
+        d = os.path.join(targetPath, item)
+        if os.path.isdir(s):
+            if not item.startswith('~$'): # Ignore ~$ file, ex:~$Arya_PV_S11_BIOS_Release_Note.xlsm
+                copytree(s, d, dirs_exist_ok=True)
+        else:
+            if not item.startswith('~$'): # Ignore ~$ file, ex:~$Arya_PV_S11_BIOS_Release_Note.xlsm
+                copy2(s, d)
+
     print("Copy Pkg " + sourcePath.split("\\")[-1] + " to " + targetPath.split("\\")[-1] + " succeeded.\n")
 
 
@@ -363,27 +378,34 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):
         source_file = os.path.join(source_fullpath, name)
-        target_dir = ""
 
-        # Determine the target directory based on file name
-        if "_84" not in name:
-            if "_32.bin" in name or "_12.bin" in name or "_16.bin" in name:
-                target_dir = os.path.join(target_fullpath, "FPTW")
+        # Check if the file needs to be copied to the FPTW folder, _84 files test sign binary are excluded.
+        if "_84" not in name and ("_32.bin" in name or "_12.bin" in name or "_16.bin" in name):
+            target_dir = os.path.join(target_fullpath, "FPTW")
+            copy(source_file, target_dir)
+            print(f"{source_file} to {target_dir} Copy succeeded.")
 
-            if "_12.bin" in name or "_32.bin" in name: # If 16MB BIOS case please add it.
-                target_dir = os.path.join(target_fullpath, "Global", "BIOS")
+        # Check if the file needs to be copied to the Global folder, _84 files test sign binary are excluded.
+        if "_84" not in name and ("_12.bin" in name or "_32.bin" in name):
+            target_dir = os.path.join(target_fullpath, "Global", "BIOS")
+            copy(source_file, target_dir)
+            print(f"{source_file} to {target_dir} Copy succeeded.")
 
-            if ".xml" in name and str(source_fullpath.split("_")[1]) in name: # Copy to XML
-                target_dir = os.path.join(target_fullpath, "XML")
+        # Check if the file needs to be copied to the XML folder
+        if ".xml" in name and str(source_fullpath.split("_")[1]) in name:
+            target_dir = os.path.join(target_fullpath, "XML")
+            copy(source_file, target_dir)
+            print(f"{source_file} to {target_dir} Copy succeeded.")
 
-            if "Pvt.bin" in name: # For Smart flash copy *Pvt.bin.
-                target_dir = target_fullpath
+        # Check if the file is a Pvt. bin file and if it needs to be copied to the root directory
+        if "Pvt.bin" in name:
+            target_dir = target_fullpath
+            copy(source_file, target_dir)
+            print(f"{source_file} to {target_dir} Copy succeeded.")
 
-        elif "_84" in name and "_32.bin" in name and os.path.exists(os.path.join(target_fullpath, "TestSign")): # For test sign binary.
+        # Check if the file is a test signature binary
+        if "_84" in name and "_32.bin" in name and os.path.exists(os.path.join(target_fullpath, "TestSign")):
             target_dir = os.path.join(target_fullpath, "TestSign")
-
-        # Copy the file if a target directory was determined
-        if target_dir:
             copy(source_file, target_dir)
             print(f"{source_file} to {target_dir} Copy succeeded.")
 
