@@ -50,20 +50,17 @@ if __name__ == '__main__':
     print("This script for making release pkg.\nNow can use Intel G4, G5, G6, G8, G9, G10&AMD G4, G5, G6, G8 platform.\n")
     OldVersion = InputStr("OldVersion:")# Input OldVersion & NewVersion & NewBuildID
     if OldVersion == "":
-        print("\nPlease Input OldVersion.")
-        sys.exit()
+        ExitProgram("\nPlease Input OldVersion.")
     NewVersion = InputStr("NewVersion:")
     if NewVersion == "":
-        print("\nPlease Input NewVersion.")
-        sys.exit()
+        ExitProgram("\nPlease Input NewVersion.")
     NewBuildID = InputStr("NewBuildID:")# ex: 020106_"0001"
     ProcessProject = InputStr("                                   (Can Multiple Select)\
         \nPlease Enter Projects To Processed"+str(BoardID)+":")# Input need Process boardID, Can multiple choice
     ProcessProjectList = ProcessProject.upper().split() # ex:['U21', 'U23']
     CheckBiosVersion(OldVersion, NewVersion, NewBuildID, ProcessProject) # Check Bios Version
     if ProcessProject == "":
-        print("\nPlease Input Project.")
-        sys.exit()
+        ExitProgram("\nPlease Input Project.")
 
     #=================Find Need Process Old Pkg==============================================
     print("Find Need Process Old Pkg".center(90, "="))
@@ -94,8 +91,7 @@ if __name__ == '__main__':
                     else:
                         temp = [a for a in temp if Project + "_" + OldVersion + "_" + OldBuildID in a]
             if len(temp) == 0:# Can't find old version pkg.
-                print(Project + "_" + OldVersion + " Old Pkg folder can't find, Please check.")
-                sys.exit()
+                ExitProgram(Project + "_" + OldVersion + " Old Pkg folder can't find, Please check.")
             else:# Add find old version pkg.
                 NeedProcOldPkg.append(temp[0])
         #======For AMD
@@ -124,8 +120,7 @@ if __name__ == '__main__':
                     else:
                         temp = [a for a in temp if Project + "_" + OldVersion_AMD + "_" + OldBuildID in a]
             if len(temp) == 0:# Can't find old version pkg.
-                print(Project + "_" + OldVersion_AMD + " Old Pkg folder can't find, Please check.")
-                sys.exit()
+                ExitProgram(Project + "_" + OldVersion_AMD + " Old Pkg folder can't find, Please check.")
             else:# Add find old version pkg.
                 NeedProcOldPkg.append(temp[0])
     print("\nYour need process old Pkg:\n" + str(NeedProcOldPkg))
@@ -302,8 +297,7 @@ if __name__ == '__main__':
             else:
                 print("Pkg " + ("_").join(OldProcPkgInfo[OProc]) + " can't find.")
         else:
-            print("Pkg " + NewVersionPath.split("\\")[-1] + Fore.RED + " already exists.")
-            sys.exit()
+            ExitProgram("Pkg " + NewVersionPath.split("\\")[-1] + Fore.RED + " already exists.")
     if len(Match_folder_list) == 0:
         print("Can't find anything Fv folder.\n")
 
@@ -536,7 +530,5 @@ if __name__ == '__main__':
         CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID)# Check new release Pkg is OK?
         PrintBiosBuildDate(Match_folder_list, BiosBuildDate)
         PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion)
-    print("\nFinally pkg please compare with leading project.\n")
-    os.system('Pause')
-    sys.exit()
+    ExitProgram("\nFinally pkg please compare with leading project.\n")
     # =================Script End===============================================================

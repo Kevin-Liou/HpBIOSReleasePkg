@@ -15,8 +15,7 @@ def Ftp_connect(Server_info):
         print("Connect to FTP......succeeded.")
         return Ftp
     except Exception as err:
-        print("\nPlease check the network connection status.\nUnable to download fv Zip file from ftp now.\n")
-        sys.exit()
+        ExitProgram("\nPlease check the network connection status.\nUnable to download fv Zip file from ftp now.\n")
 
 
 def Ftp_get_file_list(line):

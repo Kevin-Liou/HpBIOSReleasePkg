@@ -13,6 +13,13 @@ from .Platform import Platform_Flag
 from .Excel import CheckMEVersion
 
 
+# Exit program.
+def ExitProgram(message):
+    print(message)
+    input("Press any key to exit.")
+    sys.exit()
+
+
 # Working with multiple folders.
 # Function to handle file organization across multiple folders.
 def MatchMultipleFolder(Match_folder_list, ProcessProjectList, NewVersion):
@@ -56,8 +63,7 @@ def MatchMultipleFolder(Match_folder_list, ProcessProjectList, NewVersion):
                             continue
                         else:
                             # If the file is still not found in the target location, print an error message and exit the program.
-                            print(f"Can't find {expected_file} in {Fv_folder} folder, Please check Fv folder.")
-                            sys.exit()
+                            ExitProgram(f"Can't find {expected_file} in {Fv_folder} folder, Please check Fv folder.")
 
                 # For Test sign binary.
                 if file == test_sign_file:
@@ -81,8 +87,7 @@ def MatchMultipleFolder(Match_folder_list, ProcessProjectList, NewVersion):
                             continue
                         else:
                             # If the file is still not found in the target location, print an error message and exit the program.
-                            print(f"Can't find {test_sign_file} in {Fv_folder} folder, Please check Fv folder.")
-                            sys.exit()
+                            ExitProgram(f"Can't find {test_sign_file} in {Fv_folder} folder, Please check Fv folder.")
 
 
 # Check Bios Version.
@@ -107,7 +112,7 @@ def CheckBiosVersion(OldVersion, NewVersion, NewBuildID, ProcessProject):
         flag = False
 
     if flag == False:
-        sys.exit()
+        ExitProgram("")
 
 
 # Modify Update Version message in file.
