@@ -6,11 +6,8 @@ from datetime import datetime
 def UnZip(path):
     print(f"Unzip {path} Start...")
     with ZipFile(path, 'r') as my_zip:
-        for file in my_zip.namelist():
-            my_zip.extract(file,path.rstrip(".zip"))
-        my_zip.close()
+        my_zip.extractall(path.rstrip(".zip"))
     print(f"Unzip {path} Done.")
-
 
 # Print the information of the zip file.
 def PrintZipAllInfo(path):

@@ -7,7 +7,7 @@
 #This script is for making release pkg
 #Now can use Intel G4, G5, G6, G8, G9, G10 AMD G4, G5, G6, G8 platform
 #=================================
-import sys, os, logging
+import os, logging, re
 from colorama import Fore
 from shutil import move, rmtree
 
@@ -139,10 +139,8 @@ if __name__ == '__main__':
             for Proc in range(len(NewProcPkgInfo)):
                 NewProcPkgInfo[Proc] = NewProcPkgInfo[Proc][:3] # ex:['Harp', 'MV', 'Q21']
                 NewProcPkgInfo[Proc].append(NewVersion) # ex:['Harp', 'MV', 'Q21', 'NewVersion']
-                if NewBuildID == "0000":
-                    NewBuildID = ""
-                if not (NewBuildID == "" or NewBuildID == "0000"):
-                    NewProcPkgInfo[Proc].append(NewBuildID)
+                NewBuildID = "" if NewBuildID == "0000" else NewBuildID
+                if NewBuildID: NewProcPkgInfo[Proc].append(NewBuildID)
             break #Otherwise it will run more times
         #======For AMD
         else:
@@ -160,10 +158,8 @@ if __name__ == '__main__':
                     NewProcPkgInfo[Proc] = NewProcPkgInfo[Proc][:2] # ex:['Worf', 'R24']
                     NewProcPkgInfo[Proc].append(NewVersion)
                     NewProcPkgInfo[Proc][2] = NewVersion_AMD # ex:['Worf', 'R24','NewVersion_AMD(02.07.03)']
-            if NewBuildID == "0000":
-                NewBuildID = ""
-            if not (NewBuildID == "" or NewBuildID == "0000"):
-                NewProcPkgInfo[Proc].append(NewBuildID)
+            NewBuildID = "" if NewBuildID == "0000" else NewBuildID
+            if NewBuildID: NewProcPkgInfo[Proc].append(NewBuildID)
             break #Otherwise it will run more times
     logging.debug("OldProcPkgInfo:" + str(OldProcPkgInfo))
     logging.debug("NewProcPkgInfo:" + str(NewProcPkgInfo))
@@ -204,7 +200,7 @@ if __name__ == '__main__':
             if str(name).find(".zip") != -1:
                 Match_zip_list.append(name)
     # Can't find Fv folders and Number of Fv Zip files not match Project list
-    elif len(Match_folder_list) == 0 and len(Match_zip_list)<len(ProcessProjectList):
+    elif len(Match_folder_list) == 0 and len(Match_zip_list) < len(ProcessProjectList):
         print("Fv Zip files not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
         temp = Ftp_multi(NewProcPkgInfo, ProductionReleaseServer, TestReleaseServer)[:] # Download Fv files from Production Release FTP
         for name in temp:
@@ -218,6 +214,8 @@ if __name__ == '__main__':
 
     # Find Fv Zip file and can't find Fv folder start extracting
     if Match_zip_list and not Match_folder_list:
+        if len(Match_zip_list) > 1:
+            ExitProgram("Find more than one fv zip file, Please check.")
         print("\nFind Fv Zip File, Start Extracting.")
         for i, zip_file in enumerate(Match_zip_list):
             Foldername = zip_file.replace(".zip", "")
@@ -240,17 +238,16 @@ if __name__ == '__main__':
                 # For GitHub package file
                 if is_github_package:
                     new_folder_name = f"Fv_{ProcessProjectList[i]}_{NewVersion}_{NewBuildID if NewBuildID else '0000'}"
-                    os.rename(f".\\{Foldername}\\Fv", f".\\{Foldername}\\{new_folder_name}")
-                    if not os.path.isdir(f".\\{new_folder_name}"):
+                    SafeRename(f".\\{Foldername}\\Fv", f".\\{Foldername}\\{new_folder_name}")
+                    if not os.path.isdir(f".\\{new_folder_name}") and os.path.isdir(f".\\{Foldername}\\{new_folder_name}"):
                         move(f".\\{Foldername}\\{new_folder_name}", ".\\")
-                    rmtree(Foldername)
-                    # os.remove(f".\\{zip_file}") # Remove zip file
-                    Match_folder_list.append(new_folder_name)
+                        if os.path.isdir(f".\\{new_folder_name}"):
+                            rmtree(f".\\{Foldername}")
+                            Match_folder_list.append(new_folder_name)
                     print(f"Github package {zip_file} Extract succeeded.")
 
                 # For normal package file
                 elif is_normal_package:
-                    # move(f".\\{zip_file}", f".\\{Foldername}") # Move zip file
                     Match_folder_list.append(Foldername)
                     print(f"Normal package {zip_file} Extract succeeded.")
 
@@ -299,7 +296,7 @@ if __name__ == '__main__':
         else:
             ExitProgram("Pkg " + NewVersionPath.split("\\")[-1] + Fore.RED + " already exists.")
     if len(Match_folder_list) == 0:
-        print("Can't find anything Fv folder.\n")
+        ExitProgram("Can't find anything Fv folder.\n")
 
     #=================Modify Pkg Update Version==============================================
     print("Modify Pkg Update Version".center(90, "="))
@@ -311,82 +308,67 @@ if __name__ == '__main__':
     BiosBinaryChecksum = CheckFileChecksum(Match_folder_list, NewVersion)
     logging.debug(f'NewProcPkgInfo: {NewProcPkgInfo}')
     for NProc in NewProcPkgInfo:# Pkg Modify Update Version
+        Path = os.getcwd() + "\\" + ("_").join(NProc)
+        ReleaseNoteName = ""
+        ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and (".docx" in ReleaseNote)]
+        ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path)
+                            if  ("Release" in ReleaseNote)
+                            and ("Note" in ReleaseNote)
+                            and ReleaseNote.endswith(".xlsm")
+                            and not ReleaseNote.startswith("~$")] # Ignore temp file
+        logging.debug(f'ReleaseNote_docx: {ReleaseNote_docx}')
+        logging.debug(f'ReleaseNote_xlsm: {ReleaseNote_xlsm}')
         #======For Intel
         if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or \
             (Platform_Flag(NProc) == "Intel G5") or (Platform_Flag(NProc) == "Intel G6") or \
-            (Platform_Flag(NProc) == "Intel G8"):
-            Path = os.getcwd() + "\\" + ("_").join(NProc)
-            if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
-                ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and (".docx" in ReleaseNote)]
-                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path)
-                                    if  ("Release" in ReleaseNote)
-                                    and ("Note" in ReleaseNote)
-                                    and ReleaseNote.endswith(".xlsm")
-                                    and not ReleaseNote.startswith("~$")]
-                if len(ReleaseNote_docx) == 1: # If get release note G4
+            (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9"):
+            if os.path.isdir(Path + "\\FPTW"):# Check Folder Exist
+                # If get release note G4
+                if len(ReleaseNote_docx) == 1:
                     os.chdir(Path)
                     os.rename(ReleaseNote_docx[0], ("_").join(NProc) + " release note.docx")
-                    if os.path.isfile(("_").join(NProc)+" release note.docx"):
+                    if os.path.isfile(("_").join(NProc) + " release note.docx"):
                         print("ReleaseNote Rename to " + ("_").join(NProc) + " release note.docx" + " succeeded.")
-                elif len(ReleaseNote_xlsm) == 1: # If get release note G5 and late
-                    os.chdir(Path)
-                    ReleaseName = NProc[0] + "_" + NProc[1] + "_" + NProc[2] + "_BIOS_Release_Note_"
-                    if (NewBuildID == "" or NewBuildID == "0000"):
-                        if ReleaseNote_xlsm[0] == ReleaseName + NewVersion + ".xlsm":
-                            print("ReleaseNote Already Rename.")
-                            break
-                        os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + ".xlsm")
-                        if os.path.isfile(ReleaseName + NewVersion + ".xlsm"):
-                            ReleaseNoteName = ReleaseName + NewVersion + ".xlsm"
-                            ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
-                            print("ReleaseNote Rename to " + ReleaseName + NewVersion + ".xlsm" + " succeeded.")
+                # If get release note G5 and late (Support 2.0 release note)
+                elif len(ReleaseNote_xlsm) > 0:
+                    if len(ReleaseNote_xlsm) > 1:
+                        print("\n" + "Please choose which release note you want to modify\n")
+                        for index, release_note in enumerate(ReleaseNote_xlsm, start=1):
+                            print(f"{index}. {release_note}")
+                        ReleaseNoteName = ReleaseNote_xlsm[(int(input("\nPlease enter the number:"))) - 1]
                     else:
-                        if ReleaseNote_xlsm[0] == ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm":
+                        ReleaseNoteName = ReleaseNote_xlsm[0]
+
+                    # If get release note G5 and late
+                    if ReleaseNoteName:
+                        os.chdir(Path)
+                        # Rename release note
+                        VersionPattern = re.compile(r'\d{6}(?:_\d{4})?')
+                        ReleaseNewVersion = NewVersion if NewBuildID == "" else NewVersion + "_" + NewBuildID
+                        if ReleaseNewVersion in ReleaseNoteName:
                             print("ReleaseNote Already Rename.")
                             break
-                        os.rename(ReleaseNote_xlsm[0], ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm")
-                        if os.path.isfile(ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"):
-                            ReleaseNoteName = ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm"
+                        else:
+                            NewReleaseNoteName = VersionPattern.sub(ReleaseNewVersion, ReleaseNoteName, 1)
+                            os.rename(ReleaseNoteName, NewReleaseNoteName)
+                            print(f"Renamed {ReleaseNoteName} to {NewReleaseNoteName}")
+                            ReleaseNoteName = NewReleaseNoteName
+                        # Modify release note
+                        if os.path.isfile(ReleaseNoteName):
                             ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
-                            print("ReleaseNote Rename to " + ReleaseName + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
+                            print(f"ReleaseNote {ReleaseNoteName} Modify succeeded.")
                 else:
                     print("Can't find release note file.")
-                    print("ReleaseNote_xlsm" + str(ReleaseNote_xlsm))
-                os.chdir(Path + "\\FPTW")
-                ChangeBuildID(NProc, Version_file_list, NewVersion)
-            else:
-                print("Pkg Folder " + ("_").join(NProc) + " can't find.\n")
-            os.chdir("..\..")
-        #=======for 2.0 Release Note
-        elif (Platform_Flag(NProc) == "Intel G9"):
-            Path = os.getcwd() + "\\" + ("_").join(NProc)
-            if os.path.isdir(Path+"\\FPTW"):# Check Folder Exist
-                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
-                if len(ReleaseNote_xlsm) > 1:
-                    print("\n" + "Please choose which release note you want to modify\n")
-                    print("1." + ReleaseNote_xlsm[0])
-                    print("2." + ReleaseNote_xlsm[1] + "\n")
-                    ReleaseNoteName = ReleaseNote_xlsm[(int(input("Please enter the number:"))) - 1]
-                else:
-                    ReleaseNoteName = ReleaseNote_xlsm[0]
+                    ExitProgram(f"ReleaseNote_xlsm: {ReleaseNote_xlsm}, ReleaseNote_docx: {ReleaseNote_docx}")
 
-                if len(ReleaseNote_xlsm) != 0: # If get release note G5 and late
-                    os.chdir(Path)
-                    ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
-                else:
-                    print("Can't find release note file.")
-                    print("ReleaseNote_xlsm" + str(ReleaseNote_xlsm))
                 os.chdir(Path + "\\FPTW")
-                ChangeBuildID(NProc, Version_file_list, NewVersion)
+                ChangeBuildID(NProc, Version_file_list, NewVersion) # Modify BIOS version in Version_file_list files.
             else:
-                print("Pkg Folder " + ("_").join(NProc) + " can't find.\n")
-            os.chdir("..\..")
-        #======For AMD
+                ExitProgram("Pkg Folder " + ("_").join(NProc) + " can't find.\n")
+
+        #======For AMD (Not use need to modify)
         else:
-            Path = os.getcwd() + "\\" + ("_").join(NProc)
             if os.path.isdir(Path + "\\AMDFLASH"):# Check Folder Exist
-                ReleaseNote_docx = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("elease" in ReleaseNote) and (".docx" in ReleaseNote)]
-                ReleaseNote_xlsm = [ReleaseNote for ReleaseNote in os.listdir(Path) if ("Release" in ReleaseNote) and ("Note" in ReleaseNote) and (".xlsm" in ReleaseNote)]
                 if len(ReleaseNote_docx) == 1: # If get release note G4
                     os.chdir(Path)
                     os.rename(ReleaseNote_docx[0], "Scotty_" + ("_").join(NProc) + "_Release_Notes.docx")
@@ -397,7 +379,7 @@ if __name__ == '__main__':
                     ReleaseName = ReleaseNote_xlsm[0].split("Note_")[0]
                     if (NewBuildID == "" or NewBuildID == "0000"):
                         if ReleaseNote_xlsm[0] == ReleaseName + "Note_" + NewVersion + ".xlsm":
-                            print("ReleaseNote Alreadly Rename.")
+                            print("ReleaseNote Already Rename.")
                             break
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + ".xlsm"):
@@ -406,7 +388,7 @@ if __name__ == '__main__':
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + ".xlsm" + " succeeded.")
                     else:
                         if ReleaseNote_xlsm[0] == ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm":
-                            print("ReleaseNote Alreadly Rename.")
+                            print("ReleaseNote Already Rename.")
                             break
                         os.rename(ReleaseNote_xlsm[0], ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm")
                         if os.path.isfile(ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm"):
@@ -414,12 +396,14 @@ if __name__ == '__main__':
                             ModifyReleaseNote(NProc, ReleaseNoteName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list)
                             print("ReleaseNote Rename to " + ReleaseName + "Note_" + NewVersion + "_" + NewBuildID + ".xlsm" + " succeeded.")
                 else:
-                    print("Can't find Release_Notes.docx")
+                    print("Can't find release note file or more than one release note.")
+                    ExitProgram(f"ReleaseNote_xlsm: {ReleaseNote_xlsm}")
                 os.chdir(Path + "\\AMDFLASH")
                 ChangeBuildID(NProc, Version_file_list, NewVersion)
             else:
-                print("Pkg " + ("_").join(NProc) + " can't find.\n")
-            os.chdir("..\..")
+                ExitProgram("Pkg " + ("_").join(NProc) + " can't find.\n")
+
+        os.chdir("..\..")
 
     #=================Remove Pkg Old File=====================================================
     print("Remove Pkg Old File".center(90, "="))

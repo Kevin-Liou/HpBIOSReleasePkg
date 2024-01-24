@@ -240,7 +240,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     app = xw.App(visible = False,add_book = False)
     app.display_alerts = False
     app.screen_updating = False
-    filepath = ReleaseFileName
+    filepath = r"{}".format(ReleaseFileName)
     logging.debug('app books open...')
     logging.debug("Platform_Flag="+ str(Platform_Flag(NProc)))
     wb = app.books.open(filepath)
