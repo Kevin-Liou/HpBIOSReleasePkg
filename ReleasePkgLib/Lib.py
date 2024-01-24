@@ -542,7 +542,7 @@ def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
                     Match_list.append(Dir)
 
             # Checking for Github Fv Files
-            if (OldGithub_PkgVersion in Dir_lower or NewGithub_PkgVersion in Dir_lower) and (Dir_lower.endswith(".zip") or Dir_lower.endswith(".7z") or Dir_lower.endswith(".nupkg")):
+            if (OldGithub_PkgVersion[:-4] in Dir_lower or NewGithub_PkgVersion[:-4] in Dir_lower) and (Dir_lower.endswith(".zip") or Dir_lower.endswith(".7z") or Dir_lower.endswith(".nupkg")):
                 logging.debug(f'Github Dir_lower: {Dir_lower}')
                 # For U23 Github Fv project name mistake rename
                 if not Dir_lower.startswith(project.lower() + ProjectNameInfo[i].lower()):
