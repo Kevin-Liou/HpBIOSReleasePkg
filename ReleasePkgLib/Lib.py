@@ -422,7 +422,6 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
             target_dir = os.path.join(target_fullpath, "TestSign")
             copy(source_file, target_dir)
             print(f"{source_file} to {target_dir} Copy succeeded.")
-
     print("Copy process completed.\n")
 
 
@@ -484,7 +483,7 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
         if name.find("Pvt.bin") != -1:
             copy(source_fullpath + name, target_fullpath)
             print(sourceFolder + "\\" + name + " to " + targetFolder + " Copy succeeded.")
-    print()
+    print("Copy process completed.\n")
 
 
 # Find Fv Folder, Add to Match_list
@@ -495,17 +494,18 @@ def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
 
     for i, Process in enumerate(ProcessProjectList):
         for Dir in os.listdir(".\\"):
-            Match = f"Fv_{Process}_{NewVersion}_".lower()
-            if NewBuildID:
-                Match += NewBuildID.lower()
+            Match = f"Fv_{Process}_{NewVersion}_{NewBuildID}".lower() if NewBuildID else f"Fv_{Process}_{NewVersion}_0000".lower()
             Dir_lower = Dir.lower()
 
-            if Match in Dir_lower and not (".zip" in Dir_lower or ".7z" in Dir_lower):
+            if Match in Dir_lower and os.path.isdir(os.path.join(".\\", Dir)):
                 Match_list.append(Dir)
+                break
 
-            elif Github_PkgVersion in Dir_lower and not ("fv_" in Dir_lower or ".zip" in Dir_lower or ".7z" in Dir_lower or ".nupkg" in Dir_lower):
+            elif Github_PkgVersion in Dir_lower and not "fv_" in Dir_lower and os.path.isdir(os.path.join(".\\", Dir)):
                 Match_list.append(Dir)
+                break
 
+    logging.debug(f'Match_list: {Match_list}')
     return Match_list
 
 
@@ -533,6 +533,7 @@ def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
                 if Dir_lower.endswith(".7z"):
                     new_name = f"{os.path.splitext(Dir)[0]}.zip"
                     os.rename(f".\\{Dir}", f".\\{new_name}")
+                    print(f"Rename {Dir} to {new_name}")
                     Dir = new_name
                 # If a matching new version is found, prioritize
                 if NewVersionMatch in Dir_lower:
@@ -544,26 +545,30 @@ def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
             # Checking for Github Fv Files
             if (OldGithub_PkgVersion[:-4] in Dir_lower or NewGithub_PkgVersion[:-4] in Dir_lower) and (Dir_lower.endswith(".zip") or Dir_lower.endswith(".7z") or Dir_lower.endswith(".nupkg")):
                 logging.debug(f'Github Dir_lower: {Dir_lower}')
-                # For U23 Github Fv project name mistake rename
-                if not Dir_lower.startswith(project.lower() + ProjectNameInfo[i].lower()):
-                    new_name = project.lower() + ProjectNameInfo[i].lower() + Dir[len(project) + len(ProjectNameInfo[i]) -1:]
-                    os.rename(f".\\{Dir}", f".\\{new_name}")
-                    Dir = new_name
 
                 # Rename .nupkg and .7z to .zip
-                if Dir_lower.endswith(".nupkg") or Dir_lower.endswith(".7z"):
+                if (Dir_lower.endswith(".nupkg") or Dir_lower.endswith(".7z")):
                     new_name = f"{os.path.splitext(Dir)[0]}.zip"
                     os.rename(f".\\{Dir}", f".\\{new_name}")
+                    print(f"unpkg Rename {Dir} to {new_name}")
                     Dir = new_name
 
                 # If a matching new version is found, prioritize
-                if NewGithub_PkgVersion and not NewGithub_PkgVersion == "FFFFFF" and NewGithub_PkgVersion in Dir.lower():
+                logging.debug(f'NewGithub_PkgVersion: {NewGithub_PkgVersion}, OldGithub_PkgVersion: {OldGithub_PkgVersion}, Dir_lower: {Dir_lower}, Selected_file: {Selected_file}')
+                if NewGithub_PkgVersion and NewGithub_PkgVersion in Dir.lower():
                     Selected_file = Dir
                 # If a matching old version is found, prioritize
-                elif OldGithub_PkgVersion in Dir_lower and not Selected_file:
+                elif OldGithub_PkgVersion in Dir.lower() and not Selected_file:
                     Selected_file = Dir
 
+        # Check selected file name, if not match, rename it.
         if Selected_file:
+            if not Selected_file.startswith(project.lower() + ProjectNameInfo[i].lower()):
+                new_name = f"{project.lower()}{ProjectNameInfo[i].lower()}{version_base}"
+                new_name = new_name + f".{int(NewBuildID)}.zip" if NewBuildID and NewBuildID != "0000" else new_name + ".zip"
+                os.rename(f".\\{Selected_file}", f".\\{new_name}")
+                print(f"Mistake Rename {Selected_file} to {new_name}")
+                Selected_file = new_name
             Match_list = [Selected_file]
 
     return Match_list

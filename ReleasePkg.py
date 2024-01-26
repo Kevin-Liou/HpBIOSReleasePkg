@@ -78,14 +78,14 @@ if __name__ == '__main__':
                     if Project + "_" + OldVersion in Dir:
                         temp.append(Dir)
             if len(temp) > 1 and OldBuildID == "0":# If find old version pkg have buildID.
-                OldBuildID = InputStr("\n"+str(temp) + "\n" + Project + "_" + OldVersion + " Please Select Old BuildID:")
+                OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion + " Please enter the BuildID of the package you want to select:")
                 if OldBuildID == "" or OldBuildID == "0000":
                     temp = [a for a in temp if len(a.split("_")) == 4]
                 else:
                     temp = [a for a in temp if Project + "_" + OldVersion + "_" + OldBuildID in a]
                 if not len(temp) == 1:
                     temp = [Dir for Dir in os.listdir(".\\") if Project + "_" + OldVersion in Dir]
-                    OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion + " Please Select OldBuildID:")
+                    OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion + " Please enter the BuildID of the package you want to select:")
                     if OldBuildID == "" or OldBuildID == "0000":
                         temp = [a for a in temp if len(a.split("_")) == 4]
                     else:
@@ -107,14 +107,14 @@ if __name__ == '__main__':
                     if Project + "_" + OldVersion_AMD in Dir:
                         temp.append(Dir)
             if len(temp) > 1 and OldBuildID == "0":# If find old version pkg have buildID.
-                OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion_AMD + " Please Select Old BuildID:")
+                OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion_AMD + " Please enter the BuildID of the package you want to select:")
                 if OldBuildID == "" or OldBuildID == "0000":
                     temp = [a for a in temp if len(a.split("_")) == 2]
                 else:
                     temp = [a for a in temp if Project + "_" + OldVersion_AMD + "_" + OldBuildID in a]
                 if not len(temp) == 1:
                     temp = [Dir for Dir in os.listdir(".\\") if Project + "_" + OldVersion_AMD in Dir]
-                    OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion_AMD + " Please Select OldBuildID:")
+                    OldBuildID = InputStr("\n" + str(temp) + "\n" + Project + "_" + OldVersion_AMD + " Please enter the BuildID of the package you want to select:")
                     if OldBuildID == "" or OldBuildID == "0000":
                         temp = [a for a in temp if len(a.split("_")) == 2]
                     else:
@@ -211,6 +211,8 @@ if __name__ == '__main__':
         print("Fv folder already exists.\n")
 
     Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
+    if len(Match_folder_list) > 1:
+        ExitProgram("Find more than one fv folder, Please check.")
 
     # Find Fv Zip file and can't find Fv folder start extracting
     if Match_zip_list and not Match_folder_list:

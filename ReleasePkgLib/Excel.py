@@ -242,8 +242,9 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     app.screen_updating = False
     filepath = r"{}".format(ReleaseFileName)
     logging.debug('app books open...')
-    logging.debug("Platform_Flag="+ str(Platform_Flag(NProc)))
-    wb = app.books.open(filepath)
+    logging.debug("Platform_Flag = "+ str(Platform_Flag(NProc)))
+    wb = app.books.open(filepath) # I don't know why it's taking so long.
+    logging.debug('app books open finish.')
     #======For 1.0 Release note
     if "v1.08" in wb.sheets['Revision'].range('A8').value or \
     "v1.07" in wb.sheets['Revision'].range('A8').value or \
@@ -499,7 +500,6 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
 
     #======For 2.0 Release note
     elif "v2.0" in wb.sheets['Revision'].range('A8').value:
-        logging.debug("Platform_Flag="+ str(Platform_Flag(NProc)))
         try:
             #======If Intel G9 and late
             if (Platform_Flag(NProc) == "Intel G9"):
