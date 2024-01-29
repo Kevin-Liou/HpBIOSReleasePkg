@@ -4,9 +4,21 @@ from colorama import Fore
 
 
 def argparse_function(ver):
-    parser = argparse.ArgumentParser(prog = 'ReleasePkg.py', description = 'Tutorial')
+    parser = argparse.ArgumentParser(
+        prog='ReleasePkg.py',
+        description='''
+        Release Package Creation Tool.
+
+        This script is designed for creating release packages for various platforms.
+        Currently supports Intel (G4, G5, G6, G8, G9, G10) and AMD (G4, G5, G6, G8) platforms.
+        The script facilitates the process of packaging, renaming, and checking various files and folders
+        associated with BIOS release packages.
+        ''',
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument("-d", "--debug", help = 'Show debug message.', action = "store_true")
     parser.add_argument("-v", "--version", action = "version", version = ver)
+
     args = parser.parse_args()
     logging.debug(f"args: {args}")
     if args.debug:
