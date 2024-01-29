@@ -4,12 +4,16 @@
 # Author: Kevin Liou
 # Contact: Kevin.Liou@quantatw.com
 #=================================
-import sys, os, glob, logging, time
-from shutil import copy, copytree, move, rmtree, ignore_patterns, copy2
+import os
+import sys
+import glob
+import time
+import logging
+from shutil import copy, copytree, move, rmtree, copy2
 from re import sub, search, match, compile
 
 from ReleasePkgLib import *
-from .Platform import Platform_Flag
+from .Platform import *
 from .Excel import CheckMEVersion
 
 
@@ -133,15 +137,13 @@ def SafeRename(src, dst):
 def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
     pattern = r'\w\d{2}_\d{6}' # For AMD
     PlatID = NewProcPkgInfo[0]
-    if (Platform_Flag(NewProcPkgInfo) == "R24"):
+    if Platform_Flag(NewProcPkgInfo) == "R24":
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[1]
-    if (Platform_Flag(NewProcPkgInfo) == "Intel G4") or (Platform_Flag(NewProcPkgInfo) == "Intel G5") or \
-        (Platform_Flag(NewProcPkgInfo) == "Intel G6") or (Platform_Flag(NewProcPkgInfo) == "Intel G8") or \
-        (Platform_Flag(NewProcPkgInfo) == "Intel G9") or (Platform_Flag(NewProcPkgInfo) == "Intel G10"):
+    if Platform_Flag(NewProcPkgInfo) in Intel_Platforms_G4later:
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[2]
-    if (Platform_Flag(NewProcPkgInfo) == "Intel G3"):
+    if Platform_Flag(NewProcPkgInfo) == "Intel G3":
         pattern = r'\w\d{2}_\d{4}'
         PlatID = NewProcPkgInfo[2]
     for Filename in Version_file_list:
@@ -164,7 +166,7 @@ def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
 def RemoveOldFileInDir(target_dir, RemoveRule, NotRemoveRule):
     i = 0
     for root,dirs,files in os.walk(target_dir):
-        for name in files:# Here are the rules for remove
+        for name in files: # Here are the rules for remove
             Path = ".\\" + os.path.join(root, name)
             for Rule_remove in RemoveRule:
                 pattern_remove = Rule_remove
@@ -180,7 +182,7 @@ def RemoveOldFileInDir(target_dir, RemoveRule, NotRemoveRule):
                         i = i + 1
                         print(os.path.join(root, name) + "\t remove succeeded.")
     if i == 0:
-        print(target_dir+"\t no file can remove.")
+        print(target_dir + "\t no file can remove.")
     print()
 
 
@@ -211,7 +213,7 @@ def Copy_Release_Folder(sourcePath, targetPath):
 # def New_FvFolder_Move_File(Fv_Path):
 #     if os.path.isdir(Fv_Path + "\\Combined\\WU") and os.path.isfile(Fv_Path + "\\Combined\\WU\\fwu.pvk"):
 #         for root, dirs, files in os.walk(Fv_Path + "\\Combined\\WU"):
-#             for name in files:# Move "WU" file.
+#             for name in files: # Move "WU" file.
 #                 if os.path.isfile(Fv_Path + "\\Combined\\WU\\" + name):
 #                     print("move " + Fv_Path + "\\Combined\\WU\\" + name + " to " + Fv_Path + "\\Combined")
 #                     move(Fv_Path + "\\Combined\\WU\\" + name, Fv_Path + "\\Combined")
@@ -247,22 +249,19 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
     # Combined copy to Capsule&HPFWUPDREC.
     #======For G5 and late Fv
     # Check Capsule folder format for G5 and late.
-    if (Platform_Flag(targetFolder) == "Intel G5") or (Platform_Flag(targetFolder) == "Intel G6") or\
-        (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or\
-        (Platform_Flag(targetFolder) == "Intel G10"):
+    if Platform_Flag(targetFolder) in Intel_Platforms_G5later:
         if not os.path.isdir(target_fullpath + "\\Capsule\\Linux"):
             os.makedirs(target_fullpath + "\\Capsule\\Linux")
             os.makedirs(target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
-        if os.path.isdir(target_fullpath + "\\Capsule\\CCG5") and ((Platform_Flag(targetFolder) == "Intel G6") or \
-            (Platform_Flag(targetFolder) == "Intel G8") or (Platform_Flag(targetFolder) == "Intel G9") or \
-            (Platform_Flag(targetFolder) == "Intel G10")):
+        # Check Capsule folder format for G6 and late.
+        if os.path.isdir(target_fullpath + "\\Capsule\\CCG5") and Platform_Flag(targetFolder) in Intel_Platforms_G6later:
             os.rename(target_fullpath + "\\Capsule\\CCG5", target_fullpath + "\\Capsule\\PD_FW")
         if not os.path.isdir(target_fullpath + "\\Capsule\\Windows"):
             os.makedirs(target_fullpath + "\\Capsule\\Windows")
             os.makedirs(target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
             os.makedirs(target_fullpath + "\\Capsule\\Windows\\Thunderbolt")
         for file in glob.glob(target_fullpath + "\\Capsule\*.doc*"):
-            if file.find("submission") != -1 or file.find("Submission") != -1:
+            if "submission" in file or "Submission" in file:
                 move(file, target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
                 print("move " + file + " to " + target_fullpath + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)")
 
@@ -270,7 +269,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
         if os.path.isdir(source_fullpath + "\\Combined\\FUR") and os.path.isdir(source_fullpath + "\\Combined\\WU"):
             for root,dirs,files in os.walk(source_fullpath + "\\Combined\\FUR"):
                 for name in files:
-                    if name.find(".bin") != -1 or name.find(".inf") != -1:
+                    if ".bin" in name or ".inf" in name:
                         copy(root + "\\" + name, target_fullpath + "\\HPFWUPDREC")
                         print(root + "\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
             for root,dirs,files in os.walk(source_fullpath + "\\Combined\\WU"):
@@ -279,7 +278,7 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                     print(root + "\\" + name + " to " + targetFolder + "\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)" + " Copy succeeded.")
 
         # If Linux folder exist, copy files.
-        if os.path.isdir(source_fullpath+"\\Combined\\Linux"):
+        if os.path.isdir(source_fullpath + "\\Combined\\Linux"):
             for root,dirs,files in os.walk(source_fullpath + "\\Combined\\Linux"):
                 for name in files:
                     copy(root + "\\" + name, target_fullpath + "\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)")
@@ -337,7 +336,8 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                     ME_Bin_Check = "True"
                     logging.debug('ME_Version:' + ME_Version)
                     break
-        if (ME_Bin_Check == "False") and (os.path.isfile(source_fullpath + "\\ME\\ME.bin")):
+        # Copy sign ME file
+        if ME_Bin_Check == "False" and os.path.isfile(source_fullpath + "\\ME\\ME.bin"):
             ME_filename = "ME.bin"
             if os.path.isfile(source_fullpath + "\\ME\\ME.inf") and os.path.isfile(source_fullpath + "\\ME\\ME.bin"):
                 ME_Version = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
@@ -348,7 +348,8 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                     ME_filename = "ME_" + ME_Version + ".bin"
             copy(source_fullpath + "\\ME\\" + ME_filename, target_fullpath + "\\METools\\FWUpdate\\HPSignME")
             print(root + "\\" + ME_filename + "(Sign) to " + targetFolder + "\\METools\\FWUpdate\\HPSignME" + " Copy succeeded.")
-        if os.path.isfile(source_fullpath + "\\ME\\ME_0101.bin"):# Copy unsign ME file
+        # Copy unsign ME file
+        if os.path.isfile(source_fullpath + "\\ME\\ME_0101.bin"):
             if os.path.isfile(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin"):
                 os.remove(target_fullpath + "\\METools\\FWUpdate\\MEFW\\ME_" + ME_Version + ".bin")
             copy(source_fullpath + "\\ME\\ME_0101.bin", target_fullpath + "\\METools\\FWUpdate\\MEFW")
@@ -359,12 +360,12 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
                 MEFW_path = target_fullpath + "\\METools\\FWUpdate\\MEFW\\"
                 Modify_ME_WLAN_MCU_Files(MEFW_path, ME_Version)
 
-    #=======For G4 other Fv
-    if (Platform_Flag(targetFolder) == "Intel G4"):
+    #=======For G4 Fv
+    if Platform_Flag(targetFolder) == "Intel G4":
         if os.path.isfile(source_fullpath + "\\Combined\\fwu.pfx"):
             for root,dirs,files in os.walk(source_fullpath + "\\Combined"):
                 for name in files:
-                    if name.find(".bin") != -1 or name.find(".inf") != -1:
+                    if ".bin" in name or ".inf" in name:
                         copy(root + "\\" + name, target_fullpath + "\\HPFWUPDREC")
                         print(root + "\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
                     copy(root + "\\" + name, target_fullpath  + "\\Capsule")
@@ -375,17 +376,17 @@ def Copy_Release_Files(sourceFolder, targetFolder, NProc, Match_folder_list):
         if os.path.isfile(source_fullpath + "\\fwu.pfx"):
             for root,dirs,files in os.walk(source_fullpath):
                 for name in files:
-                    if name.find("_12.bin") != -1:
+                    if "_12.bin" in name:
                         copy(root + "\\" + name, target_fullpath + "\\HPBIOSUPDREC")
                         os.rename(target_fullpath + "\\HPBIOSUPDREC\\" + name, target_fullpath + "\\HPBIOSUPDREC\\" + name[0:8] + ".bin")
                         print(sourceFolder + "\\" + name[0:8] + ".bin" + " to " + targetFolder + "\\HPBIOSUPDREC" + " Copy succeeded.")
                         copy(root + "\\" + name, target_fullpath + "\\Capsule Update")
                         os.rename(target_fullpath + "\\Capsule Update\\" + name, target_fullpath + "\\Capsule Update\\" + name[0:8] + ".bin")
                         print(sourceFolder + "\\" + name[0:8] + ".bin" + " to " + targetFolder + "\\Capsule Update" + " Copy succeeded.")
-                    if name.find(".inf") != -1:
+                    if ".inf" in name:
                         copy(root + "\\" + name, target_fullpath + "\\HPBIOSUPDREC")
                         print(sourceFolder + "\\" + name + " to " + targetFolder + "\\HPBIOSUPDREC" + " Copy succeeded.")
-                    if name.find(".cer") != -1 or name.find(".pfx") != -1 or name.find(".pvk") != -1 or name.find(".cat" ) != -1 or name.find(".inf") != -1:
+                    if ".cer" in name or ".pfx" in name or ".pvk" in name or ".cat" in name or ".inf" in name:
                         copy(root + "\\" + name, target_fullpath + "\\Capsule Update")
                         print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Capsule Update" + " Copy succeeded.")
 
@@ -434,7 +435,7 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
     if os.path.isdir(source_fullpath + "\\Combined\\FUR") and os.path.isdir(source_fullpath + "\\Combined\\WU"):
         for root,dirs,files in os.walk(source_fullpath + "\\Combined\\FUR"):
             for name in files:
-                if name.find(".bin") != -1 or name.find(".inf") != -1:
+                if ".bin" in name or ".inf" in name:
                     copy(source_fullpath + "Combined\\FUR\\" + name, target_fullpath + "\\HPFWUPDREC")
                     print(sourceFolder + "\\Combined\\FUR\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
         for root,dirs,files in os.walk(source_fullpath + "\\Combined\\WU"):
@@ -451,42 +452,40 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
     elif os.path.isfile(source_fullpath + "\\Combined\\fwu.pfx"):
         for root,dirs,files in os.walk(source_fullpath + "\\Combined"):
             for name in files:
-                if name.find(".bin") != -1 or name.find(".inf") != -1:
+                if ".bin" in name or ".inf" in name:
                     copy(source_fullpath + "\\Combined\\" + name, target_fullpath + "\\HPFWUPDREC")
                     print(sourceFolder + "\\Combined\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
                 copy(source_fullpath + "\\Combined\\" + name, target_fullpath + "\\Capsule")
                 print(sourceFolder + "\\Combined\\" + name + " to " + targetFolder + "\\Capsule" + " Copy succeeded.")
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):# Bin file copy to FPTW&Global
-        if (Platform_Flag(name) == "Q26") or (Platform_Flag(name) == "Q27") or \
-            (Platform_Flag(name) == "R26") or (Platform_Flag(name) == "R24") or \
-            (Platform_Flag(name) == "S25") or (Platform_Flag(name) == "S27") or (Platform_Flag(name) == "S29") or \
-            (Platform_Flag(name) == "T25") or (Platform_Flag(name) == "T26") or (Platform_Flag(name) == "T27"): # 78 AMD 78 R26 78787878787878
-            if name.find(NewVersion + "_16.bin") != -1:
+        if Platform_Flag(name) in AMD_Platforms: # 78 AMD 78 R26 78787878787878
+            if NewVersion + "_16.bin" in name:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
-            if name.find(NewVersion + "_32.bin") != -1:
+            if NewVersion + "_32.bin" in name:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
         else:
-            if name.find(NewVersion + ".bin") != -1:
+            if NewVersion + ".bin" in name:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" + " Copy succeeded.")
-        if name.find(NewVersion + ".bin") != -1:
+        if NewVersion + ".bin" in name:
             copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
             print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.")
-        if name.find(".xml") != -1:# Copy to XML
-            if name.find(str(Platform_Flag(name))) != -1:
+        # Copy to XML
+        if ".xml" in name:
+            if str(Platform_Flag(name)) in name:
                 copy(source_fullpath + name, target_fullpath + "\\XML")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\XML" + " Copy succeeded.")
         # For Smart flash copy *Pvt.bin.
-        if name.find("Pvt.bin") != -1:
+        if "Pvt.bin" in name:
             copy(source_fullpath + name, target_fullpath)
             print(sourceFolder + "\\" + name + " to " + targetFolder + " Copy succeeded.")
     print("Copy process completed.\n")
 
 
-# Find Fv Folder, Add to Match_list
+# Find Fv Folder, Add it to the Match_list and return it
 def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
     Match_list = []
     if len(NewVersion) >= 6:
@@ -509,7 +508,7 @@ def FindFvFolder(ProcessProjectList, NewVersion, NewBuildID):
     return Match_list
 
 
-# Find Fv Zip file
+# Find Fv Zip file, Add it to the Match_list and return it
 def FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID):
     Match_list = []
     Selected_file = None

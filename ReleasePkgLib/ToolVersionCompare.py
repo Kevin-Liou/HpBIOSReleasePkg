@@ -1,8 +1,8 @@
 import os
+import xlwings as xw
 from shutil import rmtree
 from win32com.client import Dispatch
 from time import localtime, strftime
-import xlwings as xw
 
 from ReleasePkgLib import *
 

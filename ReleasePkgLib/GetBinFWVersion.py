@@ -5,7 +5,7 @@ from colorama import Fore
 
 
 from ReleasePkgLib import *
-from .Platform import Platform_Flag
+from .Platform import *
 
 
 def GetBinaryData(Match_folder_list, FindData, Offset, DataSize, Unpack_format):
@@ -16,7 +16,7 @@ def GetBinaryData(Match_folder_list, FindData, Offset, DataSize, Unpack_format):
         if os.path.isdir(Path):
             files = os.listdir(Path)
             for name in files:
-                if name.find("_32.bin") != -1:
+                if "_32.bin" in name:
                     logging.debug("find BIOS binary: " + name)
                     with open(os.path.join(Path, name), "rb") as BinaryFile:
                         FileData = BinaryFile.read()
@@ -38,9 +38,9 @@ def GetMrcVersion(Match_folder_list):
     logging.debug("Get Mrc Version Start.")
     Version = ""
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G5"): #Block Intel G5 for MRC Version error.
+        if Platform_Flag(Fv) == "Intel G5": #Block Intel G5 for MRC Version error.
             return (Version)
-        if (Platform_Flag(Fv) == "Intel G6"): #Intel G6 offset different with other generations.
+        if Platform_Flag(Fv) == "Intel G6": #Intel G6 offset different with other generations.
             Offset = 4
         else:
             Offset = 0
@@ -71,7 +71,7 @@ def GetIshVersion(Match_folder_list):
     Version = ""
     Offset = 0x94
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 ISH offset.
+        if Platform_Flag(Fv) == "Intel G8": #Modify Intel G8 ISH offset.
             Offset = 0x64
     FindData = b'ISHC.man'
     UnpackDataSize = '<4H'
@@ -87,9 +87,9 @@ def GetPmcVersion(Match_folder_list):
     Version = ""
     Offset = 0x94
     for Fv in Match_folder_list:
-        if (Platform_Flag(Fv) == "Intel G6"): #Modify Intel G6 PMC offset.
+        if Platform_Flag(Fv) == "Intel G6": #Modify Intel G6 PMC offset.
             Offset = 0x64
-        elif (Platform_Flag(Fv) == "Intel G8"): #Modify Intel G8 PMC offset.
+        elif Platform_Flag(Fv) == "Intel G8": #Modify Intel G8 PMC offset.
             Offset = 0xF4
     FindData = b'PMCP.man'
     UnpackDataSize = '<4H'

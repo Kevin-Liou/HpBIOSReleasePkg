@@ -1,3 +1,27 @@
+# Define a list of all Intel and AMD platforms, just modify this list when new platforms are added.
+Intel_Platforms = ["Intel G" + str(i) for i in range(3, 11)]  # G3 to G10
+AMD_Platforms   = ["Q26", "Q27", "R24", "R26", "S25", "S27", "S29", "T25", "T26", "T27"]
+# Define a list of all Intel and AMD platforms, just modify this list when new platforms are added.
+
+# Dynamically generate subsets
+def get_platforms_subset(all_platforms, start, end=None):
+    start_index = all_platforms.index(start)
+    end_index = len(all_platforms) if end is None else all_platforms.index(end) + 1
+    return set(all_platforms[start_index:end_index])
+
+# Intel specific platform subsets, don't modify.
+Intel_Platforms_G3G4    = get_platforms_subset(Intel_Platforms, "Intel G3", "Intel G4")
+Intel_Platforms_G4later = get_platforms_subset(Intel_Platforms, "Intel G4")
+Intel_Platforms_G5later = get_platforms_subset(Intel_Platforms, "Intel G5")
+Intel_Platforms_G6later = get_platforms_subset(Intel_Platforms, "Intel G6")
+Intel_Platforms_G9later = get_platforms_subset(Intel_Platforms, "Intel G9")
+
+# AMD specific platform subsets, don't modify.
+AMD_Platforms_R24later  = get_platforms_subset(AMD_Platforms, "R24")
+AMD_Platforms_R26later  = get_platforms_subset(AMD_Platforms, "R26")
+AMD_Platforms_ExceptR24 = set(AMD_Platforms) - {"R24"}
+
+
 # Check platform is Intel or AMD.
 def Platform_Flag(IDCheck):
     if type(IDCheck) == list:
@@ -71,3 +95,15 @@ def Platform_Flag(IDCheck):
             return "Intel G9"
         if ("V11" in IDCheck) or ("V21" in IDCheck) or ("V22" in IDCheck) or ("V23" in IDCheck):
             return "Intel G10"
+
+# Debug code.
+# if __name__ == '__main__':
+#     print("Intel_Platforms: ", Intel_Platforms)
+#     print("Intel_Platforms_G3G4: ", Intel_Platforms_G3G4)
+#     print("Intel_Platforms_G4later: ", Intel_Platforms_G4later)
+#     print("Intel_Platforms_G5later: ", Intel_Platforms_G5later)
+#     print("Intel_Platforms_G9later: ", Intel_Platforms_G9later)
+#     print("AMD_Platforms: ", AMD_Platforms)
+#     print("AMD_Platforms_R24later: ", AMD_Platforms_R24later)
+#     print("AMD_Platforms_R26later: ", AMD_Platforms_R26later)
+#     print("AMD_Platforms_ExceptR24: ", AMD_Platforms_ExceptR24)

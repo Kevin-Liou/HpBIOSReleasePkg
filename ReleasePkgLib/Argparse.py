@@ -1,4 +1,6 @@
-import argparse, logging
+import logging
+import argparse
+from colorama import Fore
 
 
 def argparse_function(ver):
@@ -8,6 +10,8 @@ def argparse_function(ver):
     args = parser.parse_args()
     if args.debug:
         Debug_Format = "%(levelname)s, %(funcName)s: %(message)s"
-        logging.basicConfig(level=logging.DEBUG, format=Debug_Format)  #Debug use flag
-        print("Enable debug mode.")
-    return ver
+        logging.basicConfig(level=logging.DEBUG, format=Debug_Format) # Debug use flag
+        print(Fore.RED + "Enable debug mode...")
+        return "Debug mode"
+    if args.version:
+        return ver

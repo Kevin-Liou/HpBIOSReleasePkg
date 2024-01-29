@@ -1,12 +1,14 @@
-import os, logging
+import os
+import struct
+import logging
+import xlwings as xw
 from colorama import Fore
 from re import sub, search
 from time import sleep
 from xlwings import constants
-import xlwings as xw
 
 from ReleasePkgLib import *
-from .Platform import Platform_Flag
+from .Platform import *
 
 
 def CheckBiosBuildDate(Match_folder_list):
@@ -79,7 +81,7 @@ def ModifyExcelData(Sheet, Modify_Data , Version):
                     cell.offset(0, 1).value = "" + str(Version)
                     if old_version != cell.offset(0, 1).value :
                         cell.offset(0, 1).api.Font.Color = 0x00B050
-                    if Modify_Data !='System BIOS':
+                    if Modify_Data != 'System BIOS':
                         return
 
 
@@ -88,13 +90,13 @@ def FindOldMEVersion(Sheet):
     for row in Sheet.range('B8:B12'):
         for cell in row:
             if cell.value and 'VERSION' in cell.value:
-                logging.debug('Old ME Version = '+ cell.offset(0, 1).value)
+                logging.debug('Old ME Version = ' + cell.offset(0, 1).value)
                 return(cell.offset(0, 1).value)
 
 
 def PrintBiosBuildDate(Match_folder_list, BiosBuildDate):
     for Fv in Match_folder_list:
-        print(Fv.split("_")[1]+"_"+Fv.split("_")[2]+" Build Date:"+BiosBuildDate[Fv.split("_")[1]])
+        print(Fv.split("_")[1] + "_"+Fv.split("_")[2] + " Build Date:" + BiosBuildDate[Fv.split("_")[1]])
 
 
 def CheckFileChecksum(Match_folder_list, NewVersion):
@@ -102,9 +104,7 @@ def CheckFileChecksum(Match_folder_list, NewVersion):
         BiosFileChecksum = {}
         for NProc in Match_folder_list:
             path = ".\\" + NProc
-            if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-                (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-                (Platform_Flag(NProc) == "Intel G10"):
+            if Platform_Flag(NProc) in Intel_Platforms:
                 #======If Intel DM 400 16MB Binary
                 if (os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin") and \
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + ".bin")) or \
@@ -130,7 +130,7 @@ def CheckFileChecksum(Match_folder_list, NewVersion):
                     os.path.isfile(path + "\\" + NProc.split("_")[1] + "_" + NewVersion + "_16.bin"):
                     for root,dirs,files in os.walk(path):
                         for name in files:
-                            if name.find("_16.bin") != -1:
+                            if "_16.bin" in name:
                                 with open(path + "\\" + name, 'rb') as f:
                                     content = f.read()
                                     binary_sum = sum(bytearray(content))
@@ -156,9 +156,7 @@ def PrintBiosBinaryChecksum(NewProcPkgInfo, BiosBinaryChecksum, NewVersion):
         path = ".\\" + ("_").join(NProc)
         logging.debug(str(BiosBinaryChecksum))
         #======If Intel
-        if (Platform_Flag(NProc) == "Intel G3") or (Platform_Flag(NProc) == "Intel G4") or (Platform_Flag(NProc) == "Intel G5") or \
-            (Platform_Flag(NProc) == "Intel G6") or (Platform_Flag(NProc) == "Intel G8") or (Platform_Flag(NProc) == "Intel G9") or \
-            (Platform_Flag(NProc) == "Intel G10"):
+        if Platform_Flag(NProc) in Intel_Platforms:
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_12.bin"):
                 print(NProc[2] + "_" + NProc[3] + "_16.bin " + "checksum = 0x{}".format(BiosBinaryChecksum[NProc[2]].upper()))
             if os.path.isfile(path + "\\FPTW\\" + NProc[2] + "_" + NProc[3] + "_32.bin"):
@@ -242,8 +240,9 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     app.screen_updating = False
     filepath = r"{}".format(ReleaseFileName)
     logging.debug('app books open...')
-    logging.debug("Platform_Flag = "+ str(Platform_Flag(NProc)))
-    wb = app.books.open(filepath) # I don't know why it's taking so long.
+    logging.debug("Platform_Flag = " + str(Platform_Flag(NProc)))
+    print("Please wait for a moment while it is being processed...")
+    wb = app.books.open(filepath) # The slow opening is a file problem.
     logging.debug('app books open finish.')
     #======For 1.0 Release note
     if "v1.08" in wb.sheets['Revision'].range('A8').value or \
@@ -251,9 +250,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     "v1.06" in wb.sheets['Revision'].range('A8').value:
         try:
             #======If Intel DM G5 and late
-            if (Platform_Flag(ReleaseFileName) == "Intel G5") or (Platform_Flag(ReleaseFileName) == "Intel G6") or \
-                (Platform_Flag(ReleaseFileName) == "Intel G8") or (Platform_Flag(ReleaseFileName) == "Intel G9") or \
-                (Platform_Flag(ReleaseFileName) == "Intel G10"):
+            if Platform_Flag(ReleaseFileName) in Intel_Platforms_G5later:
                 logging.debug('If Intel DM G5 and late')
                 MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
 
@@ -300,27 +297,26 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 logging.debug('Modify ,System BIOS ,Version ,Build Date ,CHECKSUM')
                 check = ""
                 if (NewBuildID == "" or NewBuildID == "0000"):
-                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) #BIOS Version
-                    logging.debug("VERSION")
-                    ModifyExcelData(IntelProjectPN,'VERSION',str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) #BIOS Version
-                    ModifyExcelData(IntelHistory,'BIOS Build Version',"0000") #BIOS Version
+                    ModifyExcelData(IntelHistory, 'System BIOS Version', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) # BIOS Version
+                    ModifyExcelData(IntelProjectPN, 'VERSION', str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) # BIOS Version
+                    ModifyExcelData(IntelHistory, 'BIOS Build Version', "0000") # BIOS Version
                 else:
-                    ModifyExcelData(IntelHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
-                    ModifyExcelData(IntelProjectPN,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
-                    ModifyExcelData(IntelHistory,'BIOS Build Version',NewBuildID) #NewBuildID
-                ModifyExcelData(IntelHistory,'Build Date',BiosBuildDate[ReleaseFileName.split("_")[2]]) #BUILD DATE
-                ModifyExcelData(IntelHistory,'CHECKSUM',"0x" + BiosBinaryChecksum[NProc[2]].upper()) #CHECK SUM
-                ModifyExcelData(IntelHistory,'MRC',BiosMrcVersion) #MRC
-                if(Platform_Flag(ReleaseFileName) == "Intel G9") or (Platform_Flag(ReleaseFileName) == "Intel G10"):
-                    ModifyExcelData(IntelHistory,'ISH FW version',"HpSigned_ishC_" + BiosIshVersion) #ISH
+                    ModifyExcelData(IntelHistory, 'System BIOS Version', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) # BIOS Version
+                    ModifyExcelData(IntelProjectPN, 'System BIOS Version', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) # BIOS Version
+                    ModifyExcelData(IntelHistory, 'BIOS Build Version', NewBuildID) # NewBuildID
+                ModifyExcelData(IntelHistory, 'Build Date', BiosBuildDate[ReleaseFileName.split("_")[2]]) # BUILD DATE
+                ModifyExcelData(IntelHistory, 'CHECKSUM', "0x" + BiosBinaryChecksum[NProc[2]].upper()) # CHECK SUM
+                ModifyExcelData(IntelHistory, 'MRC', BiosMrcVersion) # MRC
+                if Platform_Flag(ReleaseFileName) in Intel_Platforms_G9later:
+                    ModifyExcelData(IntelHistory, 'ISH FW version', "HpSigned_ishC_" + BiosIshVersion) # ISH
                 else:
-                    ModifyExcelData(IntelHistory,'ISH FW version',"" + BiosIshVersion) #ISH
-                ModifyExcelData(IntelHistory,'PMC',BiosPmcVersion) #PMC
-                ModifyExcelData(IntelHistory,'NPHY',BiosNphyVersion) #NPHY
-                ModifyExcelData(IntelProjectPN,'PART NUMBER',"BIOS P00000-000") #BIOS PART NUMBER
-                ModifyExcelData(IntelProjectPN,'ID',"BIOS 000000") #BIOS PART NUMBER ID
+                    ModifyExcelData(IntelHistory, 'ISH FW version', "" + BiosIshVersion) # ISH
+                ModifyExcelData(IntelHistory, 'PMC', BiosPmcVersion) # PMC
+                ModifyExcelData(IntelHistory, 'NPHY', BiosNphyVersion) # NPHY
+                ModifyExcelData(IntelProjectPN, 'PART NUMBER', "BIOS P00000-000") # BIOS PART NUMBER
+                ModifyExcelData(IntelProjectPN, 'ID', "BIOS 000000") # BIOS PART NUMBER ID
                 check = "pass"
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
                 #======ME Version
                 logging.debug('ME Version')
@@ -332,10 +328,10 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                     logging.debug('Old ME Version : ' + OldMEVersion)
                     ModifyExcelData(IntelProjectPN, 'VERSION', MEVersion)
                     if MEVersion != OldMEVersion:
-                        ModifyExcelData(IntelProjectPN,'PART NUMBER',"ME P00000-000") #ME PART NUMBER
-                        ModifyExcelData(IntelProjectPN,'ID',"ME 000000") #ME PART NUMBER ID
+                        ModifyExcelData(IntelProjectPN, 'PART NUMBER', "ME P00000-000") # ME PART NUMBER
+                        ModifyExcelData(IntelProjectPN, 'ID', "ME 000000") # ME PART NUMBER ID
                     check = "pass"
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['ME Firmware']")
                 #======Modify 'Folder Path'
                 check = ""
@@ -353,7 +349,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('Folder Path fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['Folder Path', 'ODM FTP', 'Folder Path']")
                 #======Modify 'HowToFlash'
                 check = ""
@@ -374,7 +370,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('HowToFlash fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['BIOS Flash: From -> To ']")
                 #======Modify 'HowToFlash' picture position
                 flag = "0"
@@ -403,9 +399,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                     print("Unable to locate.\n")
                 logging.debug('HowToFlash Pic position modify finish. \nModifyReleaseNote finish.')
             #======If AMD G5 and late DM
-            elif (Platform_Flag(ReleaseFileName) == "R26") or (Platform_Flag(ReleaseFileName) == "R24") or (Platform_Flag(ReleaseFileName) == "S25") or \
-                    (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
-                    (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
+            elif Platform_Flag(ReleaseFileName) in AMD_Platforms_R24later:
                 AMDHistory = wb.sheets['AMDPlatformHistory']
                 AMDInfo = wb.sheets['AMDPlatformInfo']
                 AMDHowToFlash = wb.sheets['AMDPlatformHowToFlash']
@@ -434,7 +428,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('Version fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
                 #======Modify 'Folder Path'
                 check = ""
@@ -455,7 +449,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('Folder Path fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['Folder Path', 'ODM FTP', 'Folder Path']")
                 #======Modify 'HowToFlash'
                 check = ""
@@ -486,7 +480,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('HowToFlash fill finish. \nModifyReleaseNote finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['BIOS Flash: From -> To ']")
             wb.save()
             wb.close()
@@ -502,7 +496,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
     elif "v2.0" in wb.sheets['Revision'].range('A8').value:
         try:
             #======If Intel G9 and late
-            if (Platform_Flag(NProc) == "Intel G9"):
+            if Platform_Flag(ReleaseFileName) in Intel_Platforms_G9later:
                 logging.debug('If Intel G9 late')
                 MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
                 logging.debug('wb.sheets ComponentInfo')
@@ -527,28 +521,28 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                 logging.debug('Modify ,System BIOS ,Version ,Build Date ,CHECKSUM')
                 check = ""
                 if (NewBuildID == "" or NewBuildID == "0000"):
-                    logging.debug("BuildID=0000")
-                    ModifyExcelData(PlatformHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) #BIOS Version
-                    ModifyExcelData(ComponentInfo,'VERSION',str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) #BIOS Version
-                    ModifyExcelData(PlatformHistory,'BIOS Build Version',"0000") #BIOS Version
+                    logging.debug("BuildID = "" or 0000")
+                    ModifyExcelData(PlatformHistory, 'System BIOS Version', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6]) # BIOS Version
+                    ModifyExcelData(ComponentInfo, 'VERSION', str(NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6])) # BIOS Version
+                    ModifyExcelData(PlatformHistory, 'BIOS Build Version', "0000") # BIOS Version
                 else:
-                    logging.debug("BuildID!=0000")
-                    ModifyExcelData(PlatformHistory,'System BIOS Version',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
-                    ModifyExcelData(ComponentInfo,'VERSION',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) #BIOS Version
-                    ModifyExcelData(PlatformHistory,'BIOS Build Version',NewBuildID) #NewBuildID
+                    logging.debug("BuildID != 0000")
+                    ModifyExcelData(PlatformHistory, 'System BIOS Version', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) # BIOS Version
+                    ModifyExcelData(ComponentInfo, 'VERSION', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + "_" + NewBuildID) # BIOS Version
+                    ModifyExcelData(PlatformHistory, 'BIOS Build Version', NewBuildID) # NewBuildID
                 BiosBuildDate = BiosBuildDate[NProc[2]]
-                ModifyExcelData(PlatformHistory,'Build Date',BiosBuildDate) #BUILD DATE
-                ModifyExcelData(PlatformHistory,'CHECKSUM',"0x" + BiosBinaryChecksum[NProc[2]].upper()) #CHECK SUM
-                ModifyExcelData(PlatformHistory,'MRC',BiosMrcVersion) #MRC
-                ModifyExcelData(PlatformHistory,'ISH FW version',"HpSigned_ishC_" + BiosIshVersion) #ISH
-                ModifyExcelData(PlatformHistory,'PMC',BiosPmcVersion) #PMC
-                ModifyExcelData(PlatformHistory,'NPHY FW  version',BiosNphyVersion) #NPHY
-                ModifyExcelData(PlatformHistory,'System BIOS',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + ".00") #System BIOS
-                ModifyExcelData(PlatformHistory,'HP System Firmware',NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] +".00") #HP System Firmware
-                ModifyExcelData(ComponentInfo,'PART NUMBER',"BIOS P00000-000") #BIOS PART NUMBER
-                ModifyExcelData(ComponentInfo,'ID',"BIOS 000000") #BIOS PART NUMBER ID
+                ModifyExcelData(PlatformHistory, 'Build Date', BiosBuildDate) # BUILD DATE
+                ModifyExcelData(PlatformHistory, 'CHECKSUM', "0x" + BiosBinaryChecksum[NProc[2]].upper()) # CHECK SUM
+                ModifyExcelData(PlatformHistory, 'MRC', BiosMrcVersion) # MRC
+                ModifyExcelData(PlatformHistory, 'ISH FW version', "HpSigned_ishC_" + BiosIshVersion) # ISH
+                ModifyExcelData(PlatformHistory, 'PMC', BiosPmcVersion) # PMC
+                ModifyExcelData(PlatformHistory, 'NPHY FW  version', BiosNphyVersion) # NPHY
+                ModifyExcelData(PlatformHistory, 'System BIOS', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] + ".00") # System BIOS
+                ModifyExcelData(PlatformHistory, 'HP System Firmware', NewVersion[0:2] + "." + NewVersion[2:4] + "." + NewVersion[4:6] +".00") # HP System Firmware
+                ModifyExcelData(ComponentInfo, 'PART NUMBER', "BIOS P00000-000") # BIOS PART NUMBER
+                ModifyExcelData(ComponentInfo, 'ID', "BIOS 000000") # BIOS PART NUMBER ID
                 check = "pass"
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['System BIOS Version', 'Target EE phase (DB/SI/PV)', 'Build Date', 'CHECKSUM']")
                 #======ME Version
                 logging.debug('ME Version')
@@ -560,10 +554,10 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                     logging.debug('Old ME Version : ' + OldMEVersion)
                     ModifyExcelData(ComponentInfo, 'VERSION', MEVersion)
                     if MEVersion != OldMEVersion:
-                        ModifyExcelData(ComponentInfo,'PART NUMBER',"ME P00000-000") #ME PART NUMBER
-                        ModifyExcelData(ComponentInfo,'ID',"ME 000000") #ME PART NUMBER ID
+                        ModifyExcelData(ComponentInfo,'PART NUMBER',"ME P00000-000") # ME PART NUMBER
+                        ModifyExcelData(ComponentInfo,'ID',"ME 000000") # ME PART NUMBER ID
                     check = "pass"
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['ME Firmware']")
                 #======Modify 'Folder Path'
                 logging.debug('Folder Path')
@@ -582,7 +576,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('Folder Path fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['Folder Path', 'ODM FTP', 'Folder Path']")
                 #======Modify 'HowToFlash'
                 check = ""
@@ -603,7 +597,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         logging.debug('HowToFlash fill finish.')
                         check = "pass"
                         break
-                if not check == "pass":
+                if check != "pass":
                     print("Can't find ['BIOS Flash: From -> To ']")
                 #======Modify 'HowToFlash' picture position
                 flag = "0"
@@ -632,9 +626,7 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                     print("Unable to locate.\n")
                 logging.debug('HowToFlash Pic position modify finish. \nModifyReleaseNote finish.')
             #======If AMD for G12 (Not use now)
-            # elif (Platform_Flag(ReleaseFileName) == "R26") or (Platform_Flag(ReleaseFileName) == "R24") or (Platform_Flag(ReleaseFileName) == "S25") or \
-            #         (Platform_Flag(ReleaseFileName) == "T26") or (Platform_Flag(ReleaseFileName) == "T27") or (Platform_Flag(ReleaseFileName) == "T25") or \
-            #         (Platform_Flag(ReleaseFileName) == "S27") or (Platform_Flag(ReleaseFileName) == "S29"):
+            # elif Platform_Flag(ReleaseFileName) in AMD_Platforms_R24later:
             #     AMDHistory = wb.sheets['AMDPlatformHistory']
             #     AMDInfo = wb.sheets['AMDPlatformInfo']
             #     AMDHowToFlash = wb.sheets['AMDPlatformHowToFlash']

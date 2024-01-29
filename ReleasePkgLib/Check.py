@@ -2,7 +2,7 @@ import os
 from colorama import Fore
 
 from ReleasePkgLib import *
-from .Platform import Platform_Flag
+from .Platform import *
 
 
 # Check New Release Pkg is OK?
@@ -11,7 +11,8 @@ def CheckPkg(NewProcPkgInfo):
     for NProc in NewProcPkgInfo:
         Board_version=NProc[2]+"_"+NProc[3]
         Path=".\\"+("_").join(NProc)
-        if ((Platform_Flag(NewProcPkgInfo) == "Intel G3") or (Platform_Flag(NewProcPkgInfo) == "Intel G4")):
+        # Check Intel Project G3 G4
+        if Platform_Flag(NewProcPkgInfo) in Intel_Platforms_G3G4:
             if os.path.isdir(Path):
                 if os.path.isfile(Path+"\\FPTW\\"+Board_version+"_12.bin") or os.path.isfile(Path+"\\FPTW\\"+Board_version+"_16.bin") or os.path.isfile(Path+"\\FPTW\\"+Board_version+"_32.bin"):
                     if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+"_16.bin") or os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+"_32.bin"):
@@ -27,9 +28,8 @@ def CheckPkg(NewProcPkgInfo):
                     else:print(Path+"\\Global\\BIOS\\"+Board_version+".bin"+" can't find.")
                 else:print(Path+"\\FPTW\\"+Board_version+"_12.bin"+" can't find.")
             else:print(Path+" can't find.")
-
-        if ((Platform_Flag(NewProcPkgInfo) == "Intel G5") or (Platform_Flag(NewProcPkgInfo) == "Intel G6") or (Platform_Flag(NewProcPkgInfo) == "Intel G8") or (Platform_Flag(NewProcPkgInfo) == "Intel G9")or \
-            (Platform_Flag(NewProcPkgInfo) == "Intel G10")):
+        # Check Intel Project G5 G6 G8 G9 G10
+        if Platform_Flag(NewProcPkgInfo) in Intel_Platforms_G5later:
             if os.path.isdir(Path):
                 if ((os.path.isfile(Path+"\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)\\"+Board_version+".bin") or os.path.isfile(Path+"\\Capsule\\Linux\\Combined FW Image (BIOS, ME, PD)\\"+Board_version+"00.bin")) or \
                 (os.path.isfile(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)\\"+Board_version+".bin") or os.path.isfile(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, ME, PD)\\"+Board_version+"00.bin"))) and \
@@ -56,7 +56,8 @@ def CheckPkg(NewProcPkgInfo):
 
 def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
     Check="False"
-    if (Platform_Flag(NewProcPkgInfo) == "R24") or (Platform_Flag(NewProcPkgInfo) == "Q26") or (Platform_Flag(NewProcPkgInfo) == "Q27"):
+    # Check AMD Project Q26 Q27 R24
+    if  (Platform_Flag(NewProcPkgInfo) == "Q26") or (Platform_Flag(NewProcPkgInfo) == "Q27") or (Platform_Flag(NewProcPkgInfo) == "R24"):
         for NProc in NewProcPkgInfo:
             Board_version=NProc[0]+"_"+NewVersion
             NID=NProc[0]
@@ -82,7 +83,8 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
                 else:print(Path+"\\Capsule\\"+Board_version+".bin"+" can't find.");\
                     print(Path+"\\Capsule\\"+Board_version+".inf"+" can't find.");print(Path+"\\Capsule\\"+NID.lower()+"_"+NewVersion+".cat"+" can't find.");
             else:print(Path+" can't find.")
-    if (Platform_Flag(NewProcPkgInfo) == "R26") or (Platform_Flag(NewProcPkgInfo) == "S25"):# G5 and G6 AMD R26 AMD S25
+    # Check AMD Project R26 S25
+    if (Platform_Flag(NewProcPkgInfo) == "R26") or (Platform_Flag(NewProcPkgInfo) == "S25"):
         for NProc in NewProcPkgInfo:
             Board_version=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
@@ -104,8 +106,9 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
                 else:print(Path+"\\Capsule\\Windows\\"+Board_version+".bin"+" can't find.");\
                     print(Path+"\\Capsule\\Windows\\"+Board_version+".inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
             else:print(Path+" can't find.")
+    # Check AMD Project S27 S29 T25 T27 T26
     if (Platform_Flag(NewProcPkgInfo) == "S27") or (Platform_Flag(NewProcPkgInfo) == "S29") or (Platform_Flag(NewProcPkgInfo) == "T25") or \
-        (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"):#G6/G8 AMD T26 S27
+        (Platform_Flag(NewProcPkgInfo) == "T27") or (Platform_Flag(NewProcPkgInfo) == "T26"): # G6/G8 AMD T26 S27
         for NProc in NewProcPkgInfo:
             Board_version=NProc[0]+"_"+NewVersion
             Path=".\\"+("_").join(NProc)
@@ -137,3 +140,54 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
             else:print(Path+" can't find.")
     if Check=="True":   print("New release Pkg made "+Fore.GREEN+"successfully.\n")
     else:   print("New release Pkg made "+Fore.RED+"failed.")
+
+
+''' 待處理 修改過後的程式碼
+def file_exists(path, filenames):
+    for filename in filenames:
+        if os.path.isfile(os.path.join(path, filename)):
+            return True
+    return False
+
+def check_files_exist(path, file_groups):
+    for files in file_groups:
+        if not file_exists(path, files):
+            print(f"{path}{' or '.join(files)} can't find.")
+            return False
+    return True
+
+def CheckPkg(NewProcPkgInfo):
+    Check = "False"
+    for NProc in NewProcPkgInfo:
+        Board_version = NProc[2] + "_" + NProc[3]
+        Path = ".\\" + "_".join(NProc)
+        if not os.path.isdir(Path):
+            print(Path + " can't find.")
+            continue
+
+        FPTW_files = [f"{Board_version}_12.bin", f"{Board_version}_16.bin", f"{Board_version}_32.bin"]
+        global_bios_files = [f"{Board_version}_16.bin", f"{Board_version}_32.bin"]
+        HPFWUPDREC_files = [f"{Board_version}.bin", f"{Board_version}.inf", f"{Board_version}00.bin", f"{Board_version}00.inf"]
+        XML_files = [f"{Board_version}.xml"]
+        DCI_files = ["DCI.7z", "DCI.zip"]
+
+        if not check_files_exist(Path + "\\FPTW", [FPTW_files]):
+            continue
+        if not check_files_exist(Path + "\\Global\\BIOS", [global_bios_files]):
+            continue
+        if not check_files_exist(Path + "\\HPFWUPDREC", [HPFWUPDREC_files]):
+            continue
+        if not check_files_exist(Path + "\\XML", [XML_files]):
+            continue
+        if os.path.isfile(Path + "DCI.7z") or os.path.isfile(Path + "DCI.zip"):
+            print(Path + "DCI can find.")
+            continue
+
+        Check = "True"
+        break
+
+    if Check == "True":
+        print("New release Pkg made " + Fore.GREEN + "successfully.\n")
+    else:
+        print("New release Pkg made " + Fore.RED + "failed.")
+'''
