@@ -51,7 +51,7 @@ if __name__ == '__main__':
         if Platform_Flag(Project) in Intel_Platforms:
             # Find old version pkg folder.
             for Dir in os.listdir(".\\"):
-                if not Dir.split("_")[0] == "Fv" and not ".7z" in Dir and not ".zip" in Dir:
+                if not Dir.split("_")[0] == "Fv" and not ".7z" in Dir and not ".zip" in Dir and not "_checked" in Dir :
                     if Project + "_" + OldVersion in Dir:
                         temp.append(Dir)
             # If the find old version pkg has a buildID.
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                 OldVersion_AMD = OldVersion
             # Find old version pkg folder.
             for Dir in os.listdir(".\\"):
-                if not Dir.split("_")[0] == "Fv" and not ".7z" in Dir and not ".zip" in Dir:
+                if not Dir.split("_")[0] == "Fv" and not ".7z" in Dir and not ".zip" in Dir and not "_checked" in Dir :
                     if Project + "_" + OldVersion_AMD in Dir:
                         temp.append(Dir)
             # If the find old version pkg has a buildID.
