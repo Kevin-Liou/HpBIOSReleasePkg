@@ -90,9 +90,13 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
             Path=".\\"+("_").join(NProc)
             if os.path.isdir(Path):
                 if (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+".inf"))\
-                or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) :
+                or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+NewBuildID[-2:]+".inf")) \
+		        or(os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.bin") and os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.inf")) :
                     if (os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+".bin") or os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_16.bin")) and \
-                        os.path.isfile(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"):
+                        os.path.isfile(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat")\
+			            and \
+			            (os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"_"+NewVersion+".cat")\
+                        or os.path.isfile(Path+"\\Capsule\\Windows\\"+Board_version+"00.cat")):
                         if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+".bin"):
                             if os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".bin") and os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".inf"):
                                 if os.path.isfile(Path+"\\XML\\"+NProc[0]+".xml"):
@@ -100,11 +104,11 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
                                         Check="True"
                                     else:print(Path+"DCI.7z"+" can find.")
                                 else:print(Path+"\\XML\\"+NProc[0]+".xml"+" can't find.")
-                            else:print(Path+"\\HPFWUPDREC\\"+Board_version+".bin"+" can't find.");print(Path+"\\HPFWUPDREC\\"+Board_version+".inf"+" can't find.");
+                            else:print(Path+"\\HPFWUPDREC\\"+Board_version+"(00).bin"+" can't find.");print(Path+"\\HPFWUPDREC\\"+Board_version+".inf"+" can't find.");
                         else:print(Path+"\\Global\\BIOS\\"+Board_version+".bin"+" can't find.")
                     else:print(Path+"\\AMDFLASH\\"+Board_version+".bin or _16.bin"+" can't find.")
-                else:print(Path+"\\Capsule\\Windows\\"+Board_version+".bin"+" can't find.");\
-                    print(Path+"\\Capsule\\Windows\\"+Board_version+".inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
+                else:print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).bin"+" can't find.");\
+                    print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+".cat"+" can't find.");
             else:print(Path+" can't find.")
     # Check AMD Project S27 S29 T25 T27 T26
     if (Platform_Flag(NewProcPkgInfo) == "S27") or (Platform_Flag(NewProcPkgInfo) == "S29") or (Platform_Flag(NewProcPkgInfo) == "T25") or \
