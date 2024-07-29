@@ -11,7 +11,7 @@ config_data = {
                 "S10~11", "S21~23", "S25~29",
                 "T11",    "T21~22", "T25~27",
                 "U11",    "U21~23",
-                "V11",    "V21~23"
+                          "X21~23", "X26~27",
     ],
     # AMD platform ID and platform name.
     "AMDProjectName": {
@@ -24,7 +24,9 @@ config_data = {
         "S29": "CubanoRn",
         "T25": "DoppioCzn",
         "T26": "CubanoCzn",
-        "T27": "DoppioR8"
+        "T27": "DoppioR8",
+        "X26": "MatineeP",
+        "X27": "Matinee"
     },
     # The content requires modifications to the bios version files.
     "VersionFileList": [

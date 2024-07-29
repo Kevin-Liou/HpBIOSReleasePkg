@@ -208,37 +208,13 @@ def CheckMEVersion(NProc, Match_folder_list):
             else:
                 return Version
 
-
-#Not Used now.
-# def SetReleaseNoteVersionValue(Version):
-#     RevisionV1075        = {'Revision':                  'A8'}
-#     IntelProjectPNV1075  = {'BIOS VERSION Value':        'C6',
-#                             'BIOS PART NUMBER Value':    'C7',
-#                             'ME VERSION Value':          'C11',
-#                             'ME PART NUMBER':            'C12'}
-#     IntelInfoV1075       = {'Folder Path':               'A26',
-#                             'ODM FTP':                   'A27',
-#                             'Folder Path':               'A28',
-#                             'Folder Path Value':         'B26',
-#                             'ODM FTP Value':             'B27',
-#                             'Folder Path Value':         'B28'}
-#     IntelHistoryV1075    = {'System BIOS Version':       'A10',
-#                             'Target EE phase (DB/SI/PV)':'A11',
-#                             'Build Date':                'A12',
-#                             'CHECKSUM':                  'A13',
-#                             'System BIOS Version Value': 'B10',
-#                             'Build Date Value':          'B12',
-#                             'CHECKSUM Value':            'B13',
-#                             'ME Firmware':               'B35'}
-#     IntelHowToFlashV1075 = {'BIOS Flash: From -> To':    'A18'}
-
-
 def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum, NewVersion, NewBuildID, BiosMrcVersion, BiosIshVersion, BiosPmcVersion, BiosNphyVersion, Match_folder_list):
     print("Platform ReleaseNote Modify...")
     app = xw.App(visible = False,add_book = False)
     app.display_alerts = False
     app.screen_updating = False
     filepath = r"{}".format(ReleaseFileName)
+    check = "fail"
     logging.debug('app books open...')
     logging.debug("Platform_Flag = " + str(Platform_Flag(NProc)))
     print("Please wait for a moment while it is being processed...")
@@ -594,6 +570,21 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
                         else:
                             Flash_Version_Right = sub(pattern, NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]+"_"+NewBuildID, PlatformHowToFlash.range('A'+str(a+1)).value.split("->")[1])
                         PlatformHowToFlash.range('A'+str(a+1)).value = Flash_Version_Left + "->" + Flash_Version_Right
+                        logging.debug('HowToFlash fill finish.')
+                        check = "pass"
+                        break
+                    elif PlatformHowToFlash.range('A'+str(a)).value == "From":
+                        PlatformHowToFlash.range(str(a+2)+":"+str(a+2)).api.Insert()
+                        CopyValues = PlatformHowToFlash.range('A'+str(a+1)+':O'+str(a+1)).options(ndim = 2).value
+                        PlatformHowToFlash.range('A'+str(a+2)+':M'+str(a+2)).expand('table').value = CopyValues[0]
+                        if ("From") not in str(PlatformHowToFlash.range('A'+str(a+1)).value):
+                            PlatformHowToFlash.range('A'+str(a+1)).value = "00.00.00"
+                            PlatformHowToFlash.range('B'+str(a+1)).value = "00.00.00"
+                        PlatformHowToFlash.range('A'+str(a+1)).value = PlatformHowToFlash.range('B'+str(a+2)).value
+                        if (NewBuildID == "" or NewBuildID == "0000"):
+                            PlatformHowToFlash.range('B'+str(a+1)).value = NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]
+                        else:
+                            PlatformHowToFlash.range('B'+str(a+1)).value = NewVersion[0:2]+"."+NewVersion[2:4]+"."+NewVersion[4:6]+"_"+NewBuildID
                         logging.debug('HowToFlash fill finish.')
                         check = "pass"
                         break

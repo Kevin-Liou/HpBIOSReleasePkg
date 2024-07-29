@@ -1,6 +1,7 @@
 # Define a list of all Intel and AMD platforms, just modify this list when new platforms are added.
-Intel_Platforms = ["Intel G" + str(i) for i in range(3, 11)]  # G3 to G10
-AMD_Platforms   = ["Q26", "Q27", "R24", "R26", "S25", "S27", "S29", "T25", "T26", "T27"]
+Intel_Platforms = ["Intel G" + str(i) for i in range(3, 13) if i not in (7, 10, 11)]  # G3 to G12 Remove G7, G10, G11
+AMD_Platforms   = ["AMD G" + str(i) for i in range(4, 9) if i not in (7, 9, 10, 11)] # G4 to G8 Remove G7
+AMD_ProjectID   = ["Q26", "Q27", "R24", "R26", "S25", "S27", "S29", "T25", "T26", "T27", "X26", "X27"]
 # Define a list of all Intel and AMD platforms, just modify this list when new platforms are added.
 
 # Dynamically generate subsets
@@ -15,11 +16,12 @@ Intel_Platforms_G4later = get_platforms_subset(Intel_Platforms, "Intel G4")
 Intel_Platforms_G5later = get_platforms_subset(Intel_Platforms, "Intel G5")
 Intel_Platforms_G6later = get_platforms_subset(Intel_Platforms, "Intel G6")
 Intel_Platforms_G9later = get_platforms_subset(Intel_Platforms, "Intel G9")
+Intel_Platforms_G12later = get_platforms_subset(Intel_Platforms, "Intel G12")
 
 # AMD specific platform subsets, don't modify.
-AMD_Platforms_R24later  = get_platforms_subset(AMD_Platforms, "R24")
-AMD_Platforms_R26later  = get_platforms_subset(AMD_Platforms, "R26")
-AMD_Platforms_ExceptR24 = set(AMD_Platforms) - {"R24"}
+AMD_Platforms_R24later  = get_platforms_subset(AMD_ProjectID, "R24")
+AMD_Platforms_R26later  = get_platforms_subset(AMD_ProjectID, "R26")
+AMD_Platforms_ExceptR24 = set(AMD_ProjectID) - {"R24"}
 
 
 # Check platform is Intel or AMD.
@@ -46,6 +48,10 @@ def Platform_Flag(IDCheck):
                 return "T26"
             if "T27" in ID:
                 return "T27"
+            if "X26" in ID:
+                return "X26"
+            if "X27" in ID:
+                return "X27"
             if "P10" in ID:
                 return "Intel G3"
             if ("Q10" in ID) or ("Q11" in ID) or ("Q21" in ID) or ("Q22" in ID) or ("Q23" in ID) or ("Q35" in ID):
@@ -60,6 +66,8 @@ def Platform_Flag(IDCheck):
                 return "Intel G9"
             if ("V11" in ID) or ("V21" in ID) or ("V22" in ID) or ("V23" in ID):
                 return "Intel G10"
+            if ("X11" in ID) or ("X21" in ID) or ("X22" in ID) or ("X23" in ID):
+                return "Intel G12"
     else:
         if "Q26" in IDCheck:
             return "Q26"
@@ -81,6 +89,10 @@ def Platform_Flag(IDCheck):
             return "T26"
         if "T27" in IDCheck:
             return "T27"
+        if "X26" in IDCheck:
+            return "X26"
+        if "X27" in IDCheck:
+            return "X27"
         if "P10" in IDCheck:
             return "Intel G3"
         if ("Q10" in IDCheck) or ("Q11" in IDCheck) or ("Q21" in IDCheck) or ("Q22" in IDCheck) or ("Q23" in IDCheck) or ("Q35" in IDCheck):
@@ -95,6 +107,8 @@ def Platform_Flag(IDCheck):
             return "Intel G9"
         if ("V11" in IDCheck) or ("V21" in IDCheck) or ("V22" in IDCheck) or ("V23" in IDCheck):
             return "Intel G10"
+        if ("X11" in IDCheck) or ("X21" in IDCheck) or ("X22" in IDCheck) or ("X23" in IDCheck):
+            return "Intel G12"
 
 # Debug code.
 # if __name__ == '__main__':

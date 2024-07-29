@@ -22,7 +22,15 @@ if __name__ == '__main__':
     args, Config_data = Main_init()
     #=================Input BIOS Information===================================================
     print(("Make Release Pkg Script  " + Version()).center(90, "="))
-    print("This tool allows you to make new release packages.\n\nCurrently supported platforms:\n  Intel:G4, G5, G6, G8, G9, G10\n  AMD:G4, G5, G6, G8\n")
+
+    # Formatting the lists to match the required output format
+    intel_versions = [platform.replace("Intel ", "") for platform in Intel_Platforms]
+    amd_versions = [platform.replace("AMD ", "") for platform in AMD_Platforms]
+
+    # Formatting the output
+    print("This tool allows you to make new release packages.\n")
+    print(f"Currently supported platforms:\n  Intel: {', '.join(intel_versions)}\n  AMD: {', '.join(amd_versions)}\n")
+
     if args == "Debug mode":
         OldVersion, NewVersion, NewBuildID, ProcessProject, ProcessProjectList = Config_debug()
     else:
