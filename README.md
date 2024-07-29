@@ -4,7 +4,7 @@ ReleasePkg.py is a Python script designed to assist with the creation of release
 
 ## Features
 
-- Supports Intel G4, G5, G6, G8, G9, G10 and AMD G4, G5, G6, G8 platforms
+- Supports Intel G4, G5, G6, G8, G9, G10, G12 and AMD G4, G5, G6, G8, G12 platforms
 - Allows for input of OldVersion, NewVersion and NewBuildID
 - Can process multiple projects at once
 - Modifies Pkg Update Version and release note
