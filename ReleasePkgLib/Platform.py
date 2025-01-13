@@ -21,6 +21,7 @@ Intel_Platforms_G12later = get_platforms_subset(Intel_Platforms, "Intel G12")
 # AMD specific platform subsets, don't modify.
 AMD_Platforms_R24later  = get_platforms_subset(AMD_ProjectID, "R24")
 AMD_Platforms_R26later  = get_platforms_subset(AMD_ProjectID, "R26")
+AMD_Platforms_X26later  = get_platforms_subset(AMD_ProjectID, "X26")
 AMD_Platforms_ExceptR24 = set(AMD_ProjectID) - {"R24"}
 
 
