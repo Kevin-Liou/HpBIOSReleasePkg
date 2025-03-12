@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import logging
 
 # Defining Configuration Data
 config_data = {
@@ -108,7 +109,7 @@ def Config_debug():
         NewVersion = input("(Debug)Enter NewVersion: ")
         NewBuildID = input("(Debug)Enter NewBuildID: ")
         ProcessProject = input("(Debug)Enter ProcessProject: ")
-        ProcessProjectList = ProcessProject.upper().split() # ex:['U21', 'U23']
+        ProcessProjectList = ProcessProject.upper().split()  # ex:['U21', 'U23']
         if ProcessProject == "":
             input("\n(Debug)Please Input Project.(ex. U21)")
             sys.exit()
@@ -134,13 +135,13 @@ def Config_debug():
             NewBuildID = config_data["NewBuildID"]
             ProcessProject = config_data["ProcessProject"]
             ProcessProjectList = config_data["ProcessProjectList"]
-        print()
-        print("(Debug)OldVersion: " + OldVersion)
-        print("(Debug)NewVersion: " + NewVersion)
-        print("(Debug)NewBuildID: " + NewBuildID)
-        print("(Debug)ProcessProject: " + ProcessProject)
-        print("(Debug)ProcessProjectList: " + str(ProcessProjectList))
-        print()
+
+        logging.debug("OldVersion: " + OldVersion)
+        logging.debug("NewVersion: " + NewVersion)
+        logging.debug("NewBuildID: " + NewBuildID)
+        logging.debug("ProcessProject: " + ProcessProject)
+        logging.debug("ProcessProjectList: " + str(ProcessProjectList))
+
         # 用戶確認配置文件中的訊息是否正確
         if input("(Debug)Are you sure these messages are correct? (Y/N): ").upper() == "N":
             # 如果不正確，提示用戶重新輸入
