@@ -6,6 +6,7 @@ from time import sleep
 from multiprocessing import Pool, Manager
 
 from ReleasePkgLib import *
+from .InputStr import InputStr
 
 
 # Connect to FTP...
