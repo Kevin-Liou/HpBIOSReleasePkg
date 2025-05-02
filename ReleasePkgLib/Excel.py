@@ -10,6 +10,10 @@ from xlwings import constants
 from ReleasePkgLib import *
 from .Platform import *
 
+class ExcelChangeData:
+    def __init__(self, platform_flag, match_folder_list):
+        self.bios_fw_version = BiosBinaryFwVersion(platform_flag)
+        self.BiosBuildDate = CheckBiosBuildDate(match_folder_list)
 
 def CheckBiosBuildDate(Match_folder_list):
     BiosBuildDate = {}
@@ -469,11 +473,11 @@ def ModifyReleaseNote(NProc, ReleaseFileName, BiosBuildDate, BiosBinaryChecksum,
             return 0
 
     #======For 2.0 Release note
-    elif "v2.0" in wb.sheets['Revision'].range('A8').value:
+    elif ("v2.0" in wb.sheets['Revision'].range('A8').value) or ("v2.01.02" in wb.sheets['Revision'].range('A8').value):
         try:
             #======If Intel G9 and late
-            if Platform_Flag(ReleaseFileName) in Intel_Platforms_G9later:
-                logging.debug('If Intel G9 late')
+            if (Platform_Flag(ReleaseFileName) in Intel_Platforms_G9later) or (Platform_Flag(ReleaseFileName) in AMD_Platforms_G12later) :
+                logging.debug('If Intel G9 later or AMD G12 later')
                 MEVersion = CheckMEVersion(NProc, Match_folder_list) # ex. 14.0.21.7227
                 logging.debug('wb.sheets ComponentInfo')
                 ComponentInfo = wb.sheets['ComponentInfo']
