@@ -1,5 +1,7 @@
-import os
+﻿import os
+import logging
 from colorama import Fore
+import re
 
 from ReleasePkgLib import *
 from .Platform import *
@@ -142,6 +144,32 @@ def CheckPkg_AMD(NewProcPkgInfo, NewVersion, NewBuildID):
                 else:print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).bin"+" can't find.");\
                     print(Path+"\\Capsule\\Windows\\"+Board_version+"(00).inf"+" can't find.");print(Path+"\\Capsule\\Windows\\"+NProc[0].lower()+"_"+NewVersion+"(0).cat"+" can't find.");
             else:print(Path+" can't find.")
+    # Check AMD Project G12 or later
+    if Platform_Flag(NewProcPkgInfo) in AMD_Platforms_G12later: # G12 AMD
+        for NProc in NewProcPkgInfo:
+            Board_version=NProc[2]+"_"+NewVersion
+            Path=".\\"+("_").join(NProc)
+            if os.path.isdir(Path):
+                if ((os.path.isfile(Path+"\\Capsule\\Linux\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+".bin") or os.path.isfile(Path+"\\Capsule\\Linux\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+"00.bin")) or \
+                (os.path.isfile(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+".bin") or os.path.isfile(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+"00.bin"))):
+                    if os.path.isfile(Path+"\\AMDFLASH\\"+Board_version+"_32.bin"):
+                        if os.path.isfile(Path+"\\Global\\BIOS\\"+Board_version+"_32.bin"):
+                            if (os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+"_32.bin") and os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+".inf")) or \
+                            (os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+"00.bin") or os.path.isfile(Path+"\\HPFWUPDREC\\"+Board_version+"00.inf")):
+                                if os.path.isfile(Path+"\\XML\\"+Board_version+".xml"):
+                                    Check="True"
+                                    if re.match(r"^(92|02|01)\.\d+\.\d+$", NewVersion):
+                                        if not os.path.isfile(Path+"\\TestSign\\"+re.sub(r'^\d+', "84", NewVersion)+".bin"):
+                                            print(Path + "\\TestSign\\" + re.sub(r'^\d+', "84", NewVersion) + ".bin can't find.")
+                                            Check="False"
+                                else:print(Path+"\\XML\\"+Board_version+".xml"+" can't find.")
+                            else:print(Path+"\\HPFWUPDREC\\"+Board_version+".bin"+" can't find.");print(Path+"\\HPFWUPDREC\\"+Board_version+".inf"+" can't find.");
+                        else:print(Path+"\\Global\\BIOS\\"+Board_version+"_32.bin"+" can't find.")
+                    else:print(Path+"\\AMDFLASH\\"+Board_version+"_32.bin"+" can't find.")
+                else:print(Path+"\\Capsule\\Linux\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+".bin"+" can't find.");\
+                    print(Path+"\\Capsule\\Windows\\Combined FW Image (BIOS, PD, RETIMER)\\"+Board_version+".bin"+" can't find.");
+            else:print(Path+" can't find.")
+
     if Check=="True":   print("New release Pkg made "+Fore.GREEN+"successfully.\n")
     else:   print("New release Pkg made "+Fore.RED+"failed.")
 

@@ -56,7 +56,7 @@ if __name__ == '__main__':
     for Project in ProcessProjectList:
         temp = []
         #======For Intel Project
-        if Platform_Flag(Project) in Intel_Platforms:
+        if (Platform_Flag(Project) in Intel_Platforms) or (Platform_Flag(Project) in AMD_Platforms_G12later):
             # Find old version pkg folder.
             for Dir in os.listdir(".\\"):
                 if not Dir.split("_")[0] == "Fv" and not ".7z" in Dir and not ".zip" in Dir and not "_checked" in Dir :
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     ProjectNameInfo = [Proc.split("_")[0] for Proc in NeedProcOldPkg] # ex:['Pacman', 'Asteroid']
     for OldProcPkg in OldProcPkgInfo:
         #======For Intel Project
-        if Platform_Flag(OldProcPkg) in Intel_Platforms:
+        if (Platform_Flag(Project) in Intel_Platforms) or (Platform_Flag(Project) in AMD_Platforms_G12later):
             # Save the info string to list
             for Proc in range(len(NewProcPkgInfo)):
                 NewProcPkgInfo[Proc] = NewProcPkgInfo[Proc][:3] # ex:['Harp', 'MV', 'Q21']
@@ -155,7 +155,6 @@ if __name__ == '__main__':
     #=================Find Fv Folder Or Zip File=============================================
     print("Find Fv Folder Or Zip File".center(90, "="))
     # Look for the fv folder or zip file in the directory.
-    logging.debug("ProcessProjectList: " + str(ProcessProjectList))
     Match_folder_list = FindFvFolder(ProcessProjectList, NewVersion, NewBuildID)
     Match_zip_list = FindFvZip(ProcessProjectList, ProjectNameInfo, NewVersion, NewBuildID)
 
@@ -175,28 +174,26 @@ if __name__ == '__main__':
     print("Your Fv Folder: %s" % str(Match_folder_list))
     print("Your Fv Zip File: %s" % str(Match_zip_list))
     # If can't find Fv folder or Zip file.
-    # Not support Intel G9 later platform, download Fv files from Production Release FTP.
-    if not Platform_Flag(ProcessProjectList) in Intel_Platforms_G9later:
-        if len(Match_folder_list) == 0 and len(Match_zip_list) == 0:
-            print("Can't find Fv folder and zip file.\nDownload Fv files from Production Release FTP.\n")
-            temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
-            for name in temp:
-                if ".zip" in str(name):
-                    Match_zip_list.append(name)
-        # Number of Fv folders not match Project list
-        elif len(Match_folder_list) < len(ProcessProjectList) and len(Match_folder_list) != 0 and len(Match_zip_list) < len(ProcessProjectList):
-            print("Number of Fv folders not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
-            temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
-            for name in temp:
-                if ".zip" in str(name):
-                    Match_zip_list.append(name)
-        # Can't find Fv folders and Number of Fv Zip files not match Project list
-        elif len(Match_folder_list) == 0 and len(Match_zip_list) < len(ProcessProjectList):
-            print("Fv Zip files not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
-            temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
-            for name in temp:
-                if ".zip" in str(name):
-                    Match_zip_list.append(name)
+    if len(Match_folder_list) == 0 and len(Match_zip_list) == 0:
+        print("Can't find Fv folder and zip file.\nDownload Fv files from Production Release FTP.\n")
+        temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
+        for name in temp:
+            if ".zip" in str(name):
+                Match_zip_list.append(name)
+    # Number of Fv folders not match Project list
+    elif len(Match_folder_list) < len(ProcessProjectList) and len(Match_folder_list) != 0 and len(Match_zip_list) < len(ProcessProjectList):
+        print("Number of Fv folders not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
+        temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
+        for name in temp:
+            if ".zip" in str(name):
+                Match_zip_list.append(name)
+    # Can't find Fv folders and Number of Fv Zip files not match Project list
+    elif len(Match_folder_list) == 0 and len(Match_zip_list) < len(ProcessProjectList):
+        print("Fv Zip files not match Projectlist.\nDownload Fv files from Production Release FTP.\n")
+        temp = Ftp_multi(NewProcPkgInfo, Config_data['ProductionReleaseServer'], Config_data['TestReleaseServer'])[:] # Download Fv files from Production Release FTP
+        for name in temp:
+            if ".zip" in str(name):
+                Match_zip_list.append(name)
     # If Fv folder already exists
     elif len(Match_folder_list) == len(ProcessProjectList):
         print("Fv folder already exists.\n")
@@ -284,11 +281,9 @@ if __name__ == '__main__':
             else:
                 print("Pkg " + ("_").join(OldProcPkgInfo[OProc]) + " can't find.")
         else:
-            logging.error("Pkg " + NewVersionPath.split("\\")[-1] + " already exists.")
-            ExitProgram("")
+            ExitProgram("Pkg " + NewVersionPath.split("\\")[-1] + Fore.RED + " already exists.")
     if len(Match_folder_list) == 0:
-        logging.error("Can't find anything Fv folder.\n")
-        ExitProgram("")
+        ExitProgram("Can't find anything Fv folder.\n")
 
     #=================Modify Pkg Update Version==============================================
     print("Modify Pkg Update Version".center(90, "="))
@@ -450,6 +445,22 @@ if __name__ == '__main__':
                                 else:
                                     print("Pkg " + ("_").join(NProc) + " can't find.")
                         print(Board_version + "_16.bin & " + Board_version + ".xml rename succeeded.")
+
+                    elif Fv.split("_")[1] == NProc[2]:
+                        if os.path.isdir(".\\" + Fv):
+                            Path = ".\\" + Fv
+                            Board_version = NProc[2] + "_" + NProc[3]
+                            if os.path.isfile(Path + "\\" + Board_version + ".bin") and os.path.isfile(Path + "\\" + Board_version + "_32.bin"):
+                                os.rename(Path + "\\" + Board_version + ".bin", Path + "\\" + Board_version + "_16.bin") # Rename Fv folder 2 files
+                                os.rename(Path + "\\" + NProc[2] + ".xml", Path + "\\" + Board_version + ".xml")
+                                print(Board_version + "_16.bin & " + Board_version + ".xml rename succeeded.")
+                            if (os.path.isfile(Path + "\\" + Board_version + "_32.bin") or os.path.isfile(Path + "\\"+Board_version + "_16.bin")) \
+                                and os.path.isdir(".\\" + ("_").join(NProc)): # Check Pkg Folder Exist
+                                Copy_Release_Files_AMD(Fv, ("_").join(NProc), NewVersion)
+                            else:
+                                print("Pkg " + ("_").join(NProc) + " can't find.")
+                        else:
+                            print("Need to be processed Fv folder:" + Fv + " can't find.\n")
     if len(Match_folder_list) == 0 or len(ProcessProjectList) == 0:
         print("Can't find anything Fv folder.\n")
 

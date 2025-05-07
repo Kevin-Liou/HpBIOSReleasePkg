@@ -56,7 +56,7 @@ from .Platform import (
     AMD_Platforms,
     AMD_Platforms_R24later,
     AMD_Platforms_R26later,
-    AMD_Platforms_X26later,
+    AMD_Platforms_G12later,
     AMD_Platforms_ExceptR24,
 )
 

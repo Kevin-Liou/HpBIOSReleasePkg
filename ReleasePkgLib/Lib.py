@@ -140,7 +140,7 @@ def ChangeBuildID(NewProcPkgInfo, Version_file_list, NewVersion):
     if Platform_Flag(NewProcPkgInfo) == "R24":
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[1]
-    if Platform_Flag(NewProcPkgInfo) in Intel_Platforms_G4later:
+    if (Platform_Flag(NewProcPkgInfo) in Intel_Platforms_G4later) or (Platform_Flag(NewProcPkgInfo) in AMD_Platforms_G12later):
         pattern = r'\w\d{2}_\d{6}'
         PlatID = NewProcPkgInfo[2]
     if Platform_Flag(NewProcPkgInfo) == "Intel G3":
@@ -440,14 +440,22 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
                     print(sourceFolder + "\\Combined\\FUR\\" + name + " to " + targetFolder + "\\HPFWUPDREC" + " Copy succeeded.")
         for root,dirs,files in os.walk(source_fullpath + "\\Combined\\WU"):
             for name in files:
-                copy(source_fullpath + "\\Combined\\WU\\" + name, target_fullpath + "\\Capsule\\Windows")
-                print(sourceFolder + "\\Combined\\WU\\" + name + " to " + targetFolder + "\\Capsule\\Windows" + " Copy succeeded.")
+                if Platform_Flag(targetFolder) not in AMD_Platforms_G12later:
+                    copy(source_fullpath + "\\Combined\\WU\\" + name, target_fullpath + "\\Capsule\\Windows")
+                    print(sourceFolder + "\\Combined\\WU\\" + name + " to " + targetFolder + "\\Capsule\\Windows" + " Copy succeeded.")
+                else:
+                    copy(source_fullpath + "\\Combined\\WU\\" + name, target_fullpath + "\\Capsule\\Windows\Combined FW Image (BIOS, PD, RETIMER)")
+                    print(sourceFolder + "\\Combined\\WU\\" + name + " to " + targetFolder + "\\Capsule\\Windows\Combined FW Image (BIOS, PD, RETIMER)" + " Copy succeeded.")                
     # If Linux folder exist, copy files.
     if os.path.isdir(source_fullpath+"\\Combined\\Linux"):
         for root,dirs,files in os.walk(source_fullpath+"\\Combined\\Linux"):
             for name in files:
-                copy(source_fullpath + "\\Combined\\Linux\\" + name, target_fullpath + "\\Capsule\\Linux")
-                print(sourceFolder + "\\Combined\\Linux\\" + name + " to " + targetFolder + "\\Capsule\\Linux" + " Copy succeeded.")
+                if Platform_Flag(targetFolder) not in AMD_Platforms_G12later:
+                    copy(source_fullpath + "\\Combined\\Linux\\" + name, target_fullpath + "\\Capsule\\Linux")
+                    print(sourceFolder + "\\Combined\\Linux\\" + name + " to " + targetFolder + "\\Capsule\\Linux" + " Copy succeeded.")
+                else:
+                    copy(source_fullpath + "\\Combined\\Linux\\" + name, target_fullpath + "\\Capsule\\Linux\Combined FW Image (BIOS, PD, RETIMER)")
+                    print(sourceFolder + "\\Combined\\Linux\\" + name + " to " + targetFolder + "\\Capsule\\Linux\Combined FW Image (BIOS, PD, RETIMER)" + " Copy succeeded.")             
     #=======For G4 other Fv
     elif os.path.isfile(source_fullpath + "\\Combined\\fwu.pfx"):
         for root,dirs,files in os.walk(source_fullpath + "\\Combined"):
@@ -460,9 +468,10 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
     # Bin file copy to FPTW&Global.
     for name in os.listdir(source_fullpath):# Bin file copy to FPTW&Global
         if Platform_Flag(name) in AMD_Platforms: # 78 AMD 78 R26 78787878787878
-            if NewVersion + "_16.bin" in name:
-                copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
-                print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
+            if Platform_Flag(targetFolder) not in AMD_Platforms_G12later:
+                if NewVersion + "_16.bin" in name:
+                    copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
+                    print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
             if NewVersion + "_32.bin" in name:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" +" Copy succeeded.")
@@ -470,18 +479,32 @@ def Copy_Release_Files_AMD(sourceFolder, targetFolder, NewVersion):
             if NewVersion + ".bin" in name:
                 copy(source_fullpath + name, target_fullpath + "\\AMDFLASH")
                 print(sourceFolder + "\\" + name + " to " + targetFolder + "\\AMDFLASH" + " Copy succeeded.")
-        if NewVersion + ".bin" in name:
-            copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
-            print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.")
+        if Platform_Flag(targetFolder) not in AMD_Platforms_G12later:
+            if NewVersion + ".bin" in name:
+                copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
+                print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.")
+        else:
+            if NewVersion + "_32.bin" in name:
+                copy(source_fullpath + name, target_fullpath + "\\Global\\BIOS")
+                print(sourceFolder + "\\" + name + " to " + targetFolder + "\\Global\\BIOS" + " Copy succeeded.") 
         # Copy to XML
         if ".xml" in name:
-            if str(Platform_Flag(name)) in name:
-                copy(source_fullpath + name, target_fullpath + "\\XML")
-                print(sourceFolder + "\\" + name + " to " + targetFolder + "\\XML" + " Copy succeeded.")
+            if Platform_Flag(targetFolder) not in AMD_Platforms_G12later:
+                if str(Platform_Flag(name)) in name:
+                    copy(source_fullpath + name, target_fullpath + "\\XML")
+                    print(sourceFolder + "\\" + name + " to " + targetFolder + "\\XML" + " Copy succeeded.")
+            else:
+                if NewVersion + ".xml" in name:
+                    copy(source_fullpath + name, target_fullpath + "\\XML")
+                    print(sourceFolder + "\\" + name + " to " + targetFolder + "\\XML" + " Copy succeeded.")
         # For Smart flash copy *Pvt.bin.
         if "Pvt.bin" in name:
             copy(source_fullpath + name, target_fullpath)
             print(sourceFolder + "\\" + name + " to " + targetFolder + " Copy succeeded.")
+        # Check if the file is a test signature binary
+        if "_84" in name and "_32.bin" in name and os.path.exists(os.path.join(target_fullpath, "TestSign")):
+            copy(source_fullpath + name, target_fullpath + "\\TestSign")
+            print(sourceFolder + "\\" + name + " to " + targetFolder + "\\TestSign" + " Copy succeeded.")
     print("Copy process completed.\n")
 
 
